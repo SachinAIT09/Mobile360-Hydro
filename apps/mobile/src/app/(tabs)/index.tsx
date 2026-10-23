@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { Pressable, RefreshControl, ScrollView, View } from 'react-native';
 import { router } from 'expo-router';
 import Svg, { Defs, LinearGradient as SvgGradient, Path, Stop } from 'react-native-svg';
-import { DEMO_TZ, fmtDate, fmtMoney, fmtRelative, fmtWindow, PROGRAM, type Message, type UsageMonth } from '@demo/shared';
+import { DEMO_TZ, fmtDate, fmtMoney, fmtRelative, fmtTime, fmtWindow, PROGRAM, SMART_CHARGING, type Message, type UsageMonth } from '@demo/shared';
 import { Avatar, Button, Card, ErrorBox, HeroHeader, IconButton, IconTile, Loading, NavyCard, Overline, ProgressBar, SectionTitle, StatCol, Txt } from '../../components/ui';
 import { Icon, type IconName } from '../../components/icons';
 import { colors } from '../../lib/theme';
@@ -59,6 +59,7 @@ export default function HomeScreen() {
   }
 
   const { customer, bill, evStatus, activeDrEvent } = summary;
+  const smart = summary.smartCharging;
   const r = live ?? summary.live;
   const unpaid = bill.status === 'UNPAID';
   const c = cycle(bill.periodEnd, bill.dueDate);
@@ -95,7 +96,7 @@ export default function HomeScreen() {
                 {customer.firstName} {customer.lastName}
               </Txt>
             </View>
-            <IconButton name="search" label="Search usage and insights" onPress={() => router.push('/energy' as never)} color="#FFFFFF" bg="rgba(255,255,255,0.14)" />
+            <IconButton name="search" label="Ask the energy assistant" onPress={() => router.push('/assistant' as never)} color="#FFFFFF" bg="rgba(255,255,255,0.14)" />
             <IconButton name="bell" label="Messages" badge={summary.unreadCount} onPress={() => router.push('/messages' as never)} color="#FFFFFF" bg="rgba(255,255,255,0.14)" />
           </View>
 
@@ -211,6 +212,20 @@ export default function HomeScreen() {
                 tone={summary.nearbyOutage ? 'warning' : 'success'}
                 onPress={() => router.push('/outage' as never)}
               />
+              {smart !== null || evStatus !== 'NONE' ? (
+                <InsightRow
+                  icon="carCharge"
+                  title={
+                    smart?.enabled
+                      ? ['Smart charging on', smart.nextStart ? `next charge ${fmtTime(smart.nextStart)}` : smart.chargingNow ? 'charging now' : null, `saves ${fmtMoney(smart.savingsPerNight)}/night`]
+                          .filter(Boolean)
+                          .join(' · ')
+                      : 'Charge for less overnight'
+                  }
+                  body={smart?.enabled ? 'Tap to see tonight’s charging plan.' : `${SMART_CHARGING.name} picks the cheapest, cleanest hours for your EV.`}
+                  onPress={() => router.push('/smart-charging' as never)}
+                />
+              ) : null}
             </View>
           </Card>
 

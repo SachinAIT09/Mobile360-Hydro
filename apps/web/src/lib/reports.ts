@@ -43,9 +43,12 @@ function funnelStages(list: Campaign[]): FunnelStage[] {
   return rows.map(([stage, count]) => ({ stage, count, pct: pctOf(count, sent) }));
 }
 
-/** Offer campaigns (ENROLL_OFFER), test sends excluded unless nothing else exists; newest first. */
+/** Only campaigns that actually went out count (not SCHEDULED, SENDING or CANCELLED). */
+const isSent = (c: Campaign) => c.status === 'SENT';
+
+/** Sent offer campaigns (ENROLL_OFFER), test sends excluded unless nothing else exists; newest first. */
 export function offerCampaigns(campaigns: Campaign[]): Campaign[] {
-  const offers = campaigns.filter((c) => c.type === 'ENROLL_OFFER');
+  const offers = campaigns.filter((c) => c.type === 'ENROLL_OFFER' && isSent(c));
   const real = offers.filter((c) => !c.isTest);
   return [...(real.length > 0 ? real : offers)].sort((a, b) => b.sentAt.localeCompare(a.sentAt));
 }
@@ -83,11 +86,11 @@ export interface DrPerformanceRow {
   windowEnd: string | null;
 }
 
-/** One row per STOP_CHARGING campaign, newest first, with the linked DR event's status. */
+/** One row per sent STOP_CHARGING campaign, newest first, with the linked DR event's status. */
 export function drPerformance(campaigns: Campaign[], drEvents: DrEvent[]): DrPerformanceRow[] {
   const byId = new Map(drEvents.map((e) => [e.id, e]));
   return campaigns
-    .filter((c) => c.type === 'STOP_CHARGING')
+    .filter((c) => c.type === 'STOP_CHARGING' && isSent(c))
     .sort((a, b) => b.sentAt.localeCompare(a.sentAt))
     .map((c) => {
       const ev = c.drEventId ? byId.get(c.drEventId) : undefined;
@@ -95,7 +98,9 @@ export function drPerformance(campaigns: Campaign[], drEvents: DrEvent[]): DrPer
       return {
         campaignId: c.id,
         drEventId: c.drEventId,
-        feederCode: ev?.feederCode ?? (c.audience.kind === 'FEEDER' ? c.audience.feederCode : '—'),
+        feederCode:
+          ev?.feederCode ??
+          (c.audience.kind === 'FEEDER' ? c.audience.feederCode : c.audience.kind === 'FEEDERS' ? (c.audience.feederCodes[0] ?? '—') : '—'),
         audienceLabel: c.audienceLabel,
         sentAt: c.sentAt,
         isTest: c.isTest,

@@ -1,4 +1,4 @@
-import type { Campaign, DrEvent, EnergyReading, LiveEvent, Message } from './types';
+import type { AuditEntry, Campaign, DrEvent, EnergyReading, LiveEvent, Message } from './types';
 
 /**
  * Socket.IO contract. Clients connect to the API origin with
@@ -11,6 +11,8 @@ export const SocketEvents = {
   messageNew: 'message:new',
   messagePopup: 'message:popup',
   campaignStatsChanged: 'campaign:statsChanged',
+  campaignStatusChanged: 'campaign:statusChanged',
+  auditNew: 'audit:new',
   drEventStatusChanged: 'drEvent:statusChanged',
   energyReading: 'energy:reading',
   meChanged: 'me:changed',
@@ -28,6 +30,10 @@ export interface ServerToClientEvents {
   'message:popup': (m: Message) => void;
   /** staff */
   'campaign:statsChanged': (c: Campaign) => void;
+  /** staff — a campaign was scheduled, dispatched, sent or cancelled */
+  'campaign:statusChanged': (c: Campaign) => void;
+  /** staff — a new audit-log entry */
+  'audit:new': (e: AuditEntry) => void;
   /** staff + affected customers */
   'drEvent:statusChanged': (e: DrEvent) => void;
   /** customer — every 5 s */

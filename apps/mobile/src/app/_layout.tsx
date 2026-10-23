@@ -58,6 +58,11 @@ function AuthGate() {
           name="ev-detected"
           options={{ presentation: 'transparentModal', animation: 'fade', contentStyle: { backgroundColor: 'transparent' } }}
         />
+        <Stack.Screen
+          name="assistant"
+          options={{ presentation: 'transparentModal', animation: 'fade', contentStyle: { backgroundColor: 'transparent' } }}
+        />
+        <Stack.Screen name="smart-charging" />
       </Stack>
       <Banner />
       <ConnectionPill />

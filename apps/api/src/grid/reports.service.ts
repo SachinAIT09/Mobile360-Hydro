@@ -104,6 +104,7 @@ export class ReportsService {
         drRequests: camp?.drRequests ?? 0,
         testSends: camp?.testSends ?? 0,
       },
+      smartCharging: { homes: 0, flexibleKw: 0, shiftedKwhPerNight: 0, peakAvoidedMw: 0 },
     };
   }
 }

@@ -39,6 +39,7 @@ export class DrEventsService {
       windowEnd: e.windowEnd.toISOString(),
       status: e.status,
       campaignId: String(e.campaignId),
+      feederCodes: e.feederCodes?.length ? e.feederCodes : [e.feederCode],
     };
   }
 

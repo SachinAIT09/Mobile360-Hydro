@@ -85,6 +85,10 @@ export function Shell() {
               <Icon name="settings" size={18} />
               Demo control panel
             </NavLink>
+            <NavLink to="/audit">
+              <Icon name="clock" size={18} />
+              Audit log
+            </NavLink>
           </nav>
           <div className="sidebar-foot">
             <span className="conn" role="status" aria-live="polite" title={conn.title}>

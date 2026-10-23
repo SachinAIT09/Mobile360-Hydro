@@ -42,6 +42,12 @@ function campaign(p: Partial<Campaign> & { id: string }): Campaign {
     drEventId: null,
     stats: stats(),
     demoMessageId: null,
+    scheduledFor: null,
+    createdAt: p.sentAt ?? '2026-10-20T10:00:00.000Z',
+    createdBy: null,
+    variants: null,
+    variantStats: null,
+    winner: null,
     ...p,
   };
 }
@@ -96,6 +102,15 @@ describe('campaign funnel', () => {
     expect(offerCampaigns([testOffer, dr1]).map((c) => c.id)).toEqual(['t']);
     expect(campaignFunnel([dr1], 'all')).toBeNull();
     expect(campaignFunnel([], 'latest')).toBeNull();
+  });
+
+  it('ignores campaigns that have not been sent (scheduled, sending or cancelled)', () => {
+    const scheduled = campaign({ id: 's', status: 'SCHEDULED', sentAt: '2026-10-23T10:00:00.000Z', stats: stats({ targeted: 50, sent: 50 }) });
+    const cancelled = campaign({ id: 'x', status: 'CANCELLED', sentAt: '2026-10-23T11:00:00.000Z' });
+    expect(offerCampaigns([offerA, scheduled, cancelled]).map((c) => c.id)).toEqual(['a']);
+    expect(campaignFunnel([scheduled], 'latest')).toBeNull();
+    const drScheduled = campaign({ ...dr1, id: 'ds', status: 'SCHEDULED' });
+    expect(drPerformance([dr1, drScheduled], events).map((r) => r.campaignId)).toEqual(['d1']);
   });
 
   it('has 0% stages when nothing was sent', () => {

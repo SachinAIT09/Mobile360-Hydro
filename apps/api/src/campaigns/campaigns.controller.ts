@@ -1,7 +1,11 @@
 import { Body, Controller, Get, Param, Post } from '@nestjs/common';
 import { Type } from 'class-transformer';
 import {
+  ArrayMaxSize,
+  ArrayMinSize,
+  IsArray,
   IsBoolean,
+  IsISO8601,
   IsIn,
   IsMongoId,
   IsNumber,
@@ -23,14 +27,23 @@ import type {
   CampaignCreateRequest,
   CampaignSegment,
   CampaignType,
+  CampaignVariantCopy,
+  VariantId,
 } from '@demo/shared';
 import { Roles } from '../auth/auth.js';
 import { CampaignsService } from './campaigns.service.js';
 
 class AudienceDto {
-  @IsIn(['FEEDER', 'LIVE_EVENT']) kind: 'FEEDER' | 'LIVE_EVENT';
+  @IsIn(['FEEDER', 'LIVE_EVENT', 'FEEDERS']) kind: 'FEEDER' | 'LIVE_EVENT' | 'FEEDERS';
   @ValidateIf((o: AudienceDto) => o.kind === 'FEEDER') @IsString() @Matches(/^SUB-\d+-F\d+$/) feederCode?: string;
   @ValidateIf((o: AudienceDto) => o.kind === 'LIVE_EVENT') @IsMongoId() liveEventId?: string;
+  @ValidateIf((o: AudienceDto) => o.kind === 'FEEDERS')
+  @IsArray()
+  @ArrayMinSize(2)
+  @ArrayMaxSize(10)
+  @IsString({ each: true })
+  @Matches(/^SUB-\d+-F\d+$/, { each: true })
+  feederCodes?: string[];
   @IsIn(['UNENROLLED_EV', 'ENROLLED_EV']) segment: CampaignSegment;
 }
 
@@ -50,6 +63,15 @@ class ChannelsDto {
 class ScheduleDto {
   @IsBoolean() sendNow: boolean;
   @IsNumber() @Min(1) @Max(24 * 30) expiresInHours: number;
+  /** Planned send time when sendNow is false (handled by the dispatcher). */
+  @IsOptional() @IsISO8601() sendAt?: string;
+}
+
+class VariantDto implements CampaignVariantCopy {
+  @IsIn(['A', 'B']) id: VariantId;
+  @IsString() @MinLength(3) @MaxLength(140) title: string;
+  @IsString() @MinLength(3) @MaxLength(1000) body: string;
+  @IsString() @MinLength(1) @MaxLength(40) cta: string;
 }
 
 class PreviewDto {
@@ -67,12 +89,21 @@ class CreateCampaignDto {
   @ValidateNested() @Type(() => ChannelsDto) channels: ChannelsDto;
   @ValidateNested() @Type(() => ScheduleDto) schedule: ScheduleDto;
   @IsOptional() @IsMongoId() testCustomerId?: string;
+  @IsOptional()
+  @IsArray()
+  @ArrayMinSize(2)
+  @ArrayMaxSize(2)
+  @ValidateNested({ each: true })
+  @Type(() => VariantDto)
+  variants?: VariantDto[];
 }
 
 const toAudience = (a: AudienceDto): CampaignAudience =>
   a.kind === 'FEEDER'
     ? { kind: 'FEEDER', feederCode: a.feederCode ?? '', segment: a.segment }
-    : { kind: 'LIVE_EVENT', liveEventId: a.liveEventId ?? '', segment: a.segment };
+    : a.kind === 'FEEDERS'
+      ? { kind: 'FEEDERS', feederCodes: [...(a.feederCodes ?? [])], segment: a.segment }
+      : { kind: 'LIVE_EVENT', liveEventId: a.liveEventId ?? '', segment: a.segment };
 
 @Roles('STAFF')
 @Controller('campaigns')
@@ -107,6 +138,7 @@ export class CampaignsController {
       channels: { ...body.channels },
       schedule: { ...body.schedule },
       testCustomerId: body.testCustomerId,
+      variants: body.variants?.length === 2 ? [{ ...body.variants[0] }, { ...body.variants[1] }] : undefined,
     };
     return this.campaigns.create(req);
   }

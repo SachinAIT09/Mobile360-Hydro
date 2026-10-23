@@ -81,7 +81,7 @@ export default function ProfileScreen() {
 
           <Group title="Preferences">
             <ListRow icon="bell" title="Notifications" sub={`Grid events: ${channelsLine}`} href="/settings" accessibilityLabel={`Notifications. Grid events: ${channelsLine}. Opens settings`} />
-            <ListRow icon="chart" title="Usage preferences" sub="Live feed, kWh, cost estimate" href="/energy" last />
+            <ListRow icon="chart" title="Usage preferences" sub="Smart charging, rate plan" href="/smart-charging" last />
           </Group>
 
           <Group title="Program">

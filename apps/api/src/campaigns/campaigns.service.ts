@@ -65,6 +65,12 @@ export class CampaignsService {
       if (!audience.feederCode) throw new BadRequestException('feederCode is required');
       pool = await this.db.customers.find({ feederCode: audience.feederCode }).lean();
       label = `${audience.feederCode} · ${SEGMENT_LABEL[audience.segment]}`;
+    } else if (audience.kind === 'FEEDERS') {
+      const codes = [...new Set(audience.feederCodes ?? [])];
+      if (codes.length < 2) throw new BadRequestException('feederCodes needs at least 2 feeders');
+      pool = await this.db.customers.find({ feederCode: { $in: codes } }).lean();
+      const more = codes.length > 2 ? ` +${codes.length - 2}` : '';
+      label = `${codes.slice(0, 2).join(', ')}${more} · ${SEGMENT_LABEL[audience.segment]}`;
     } else {
       if (!audience.liveEventId || !Types.ObjectId.isValid(audience.liveEventId)) throw new BadRequestException('liveEventId is required');
       const le = await this.db.liveEvents.findById(audience.liveEventId).lean();
@@ -115,7 +121,8 @@ export class CampaignsService {
     const now = new Date();
     const campaignId = new Types.ObjectId();
     const targets = resolved.targets;
-    const feederForEvent = req.audience.kind === 'FEEDER' ? req.audience.feederCode : targets[0].feederCode;
+    const feederForEvent =
+      req.audience.kind === 'FEEDER' ? req.audience.feederCode : req.audience.kind === 'FEEDERS' ? req.audience.feederCodes[0] : targets[0].feederCode;
 
     // Merge-field values.
     const window = nextEventWindow(now);
@@ -156,6 +163,7 @@ export class CampaignsService {
       status: 'SENT',
       isTest,
       sentAt: now,
+      createdAt: now,
       expiresAt: new Date(now.getTime() + Math.max(1, req.schedule.expiresInHours) * 3600000),
       drEventId,
       stats: emptyStats(targets.length),
@@ -209,7 +217,7 @@ export class CampaignsService {
     await this.liveEvents.create({
       kind: 'CAMPAIGN_SENT',
       substationCode: sub,
-      feederCode: req.audience.kind === 'FEEDER' ? req.audience.feederCode : null,
+      feederCode: req.audience.kind === 'FEEDER' ? req.audience.feederCode : req.audience.kind === 'FEEDERS' ? req.audience.feederCodes[0] : null,
       headline: `${req.type === 'ENROLL_OFFER' ? 'Enrollment offer' : 'Stop-charging request'}${isTest ? ' test' : ''} sent`,
       summary: `to ${targets.length} customer${targets.length === 1 ? '' : 's'} · ${resolved.label}`,
       count: targets.length,

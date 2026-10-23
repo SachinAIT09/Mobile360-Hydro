@@ -9,6 +9,8 @@ import { CampaignsPage } from './pages/Campaigns';
 import { EventsPage } from './pages/Events';
 import { DemoPage } from './pages/Demo';
 import { CampaignKeyed } from './pages/CampaignKeyed';
+import { CampaignDetailPage } from './pages/CampaignDetail';
+import { AuditPage } from './pages/Audit';
 import { NotFoundPage } from './pages/NotFound';
 import { ReportsPage } from './pages/ReportsLazy';
 
@@ -22,6 +24,7 @@ createRoot(document.getElementById('root') as HTMLElement).render(
             <Route path="/feeders" element={<FeedersPage />} />
             <Route path="/campaigns" element={<CampaignsPage />} />
             <Route path="/campaigns/new" element={<CampaignKeyed />} />
+            <Route path="/campaigns/:id" element={<CampaignDetailPage />} />
             <Route path="/events" element={<EventsPage />} />
             <Route
               path="/reports"
@@ -32,6 +35,7 @@ createRoot(document.getElementById('root') as HTMLElement).render(
               }
             />
             <Route path="/demo" element={<DemoPage />} />
+            <Route path="/audit" element={<AuditPage />} />
             <Route path="/login" element={<Navigate to="/feeders" replace />} />
             <Route path="*" element={<NotFoundPage />} />
           </Route>

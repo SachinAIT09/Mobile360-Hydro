@@ -3,6 +3,7 @@ import { InjectConnection } from '@nestjs/mongoose';
 import type { Connection, Model } from 'mongoose';
 import {
   M,
+  type AuditEntryDoc,
   type BillDoc,
   type CampaignDoc,
   type ConfigDoc,
@@ -44,6 +45,7 @@ export class Db {
   readonly outages: Model<OutageDoc>;
   readonly outageReports: Model<OutageReportDoc>;
   readonly liveEvents: Model<LiveEventDoc>;
+  readonly audit: Model<AuditEntryDoc>;
 
   constructor(@InjectConnection() readonly connection: Connection) {
     const c = connection;
@@ -65,6 +67,7 @@ export class Db {
     this.outages = c.model<OutageDoc>(M.Outage);
     this.outageReports = c.model<OutageReportDoc>(M.OutageReport);
     this.liveEvents = c.model<LiveEventDoc>(M.LiveEvent);
+    this.audit = c.model<AuditEntryDoc>(M.AuditEntry);
   }
 
   /** Drop every demo collection (used by reset). */
@@ -72,7 +75,7 @@ export class Db {
     const models = [
       this.config, this.substations, this.feeders, this.premises, this.customers, this.users, this.detections,
       this.enrollments, this.programs, this.messages, this.campaigns, this.drEvents, this.responses, this.bills,
-      this.payments, this.outages, this.outageReports, this.liveEvents,
+      this.payments, this.outages, this.outageReports, this.liveEvents, this.audit,
     ] as Model<unknown>[];
     await Promise.all(models.map((m) => m.deleteMany({})));
   }

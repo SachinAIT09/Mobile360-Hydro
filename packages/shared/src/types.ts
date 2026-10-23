@@ -127,6 +127,13 @@ export interface MeSummary {
   nearbyOutage: Outage | null;
   today: { usedKwh: number; selfConsumptionPct: number | null };
   live: EnergyReading;
+  /** Smart-charging snapshot for the Home screen; null when the customer has never turned it on. */
+  smartCharging: {
+    enabled: boolean;
+    chargingNow: boolean;
+    nextStart: string | null;
+    savingsPerNight: number;
+  } | null;
 }
 
 // ---------------------------------------------------------------- energy
@@ -163,6 +170,72 @@ export interface EnergySummary {
   breakdown: EnergyBreakdownItem[];
   peakSolarW: number | null;
   peakSolarAt: string | null;
+}
+
+// ---------------------------------------------------------------- smart charging
+
+export type RatePlanId = 'TOU' | 'ULO' | 'TIERED';
+
+export interface SmartChargingSettings {
+  enabled: boolean;
+  /** Local time the car must be ready by, "HH:MM" on a 15-minute boundary. */
+  readyBy: string;
+  targetKwh: number;
+  ratePlan: RatePlanId;
+}
+
+export interface ChargeSlot {
+  start: string;
+  end: string;
+  kw: number;
+  ratePerKwh: number;
+  /** Rate period name, e.g. "off-peak" | "ultra-low". */
+  period: string;
+}
+
+export interface SmartChargingPlan {
+  settings: SmartChargingSettings;
+  hasEv: boolean;
+  /** Plug-in (18:00) → readyBy, the window the planner works in. */
+  session: { start: string; end: string };
+  slots: ChargeSlot[];
+  plannedKwh: number;
+  /** kWh the window cannot fit (target not reachable). */
+  shortfallKwh: number;
+  cost: number;
+  /** Cost of charging immediately at plug-in. */
+  baselineCost: number;
+  savings: number;
+  co2Kg: number;
+  baselineCo2Kg: number;
+  co2SavedKg: number;
+  /** DR windows the plan charges around. */
+  avoidedDrWindows: { start: string; end: string; title: string }[];
+  chargingNow: boolean;
+  nextStart: string | null;
+  /** Set while a "Charge now" boost is running. */
+  boostUntil: string | null;
+  /** 24 hourly points for the plan chart. */
+  hourly: { hour: string; kw: number; rate: number; period: string }[];
+}
+
+export interface SmartChargingUpdateRequest {
+  enabled: boolean;
+  readyBy: string;
+  targetKwh: number;
+  ratePlan: RatePlanId;
+}
+
+export interface RatePlanComparison {
+  basisKwhPerMonth: number;
+  plans: {
+    id: RatePlanId;
+    label: string;
+    monthlyCost: number;
+    withSmartCharging: number;
+    current: boolean;
+    best: boolean;
+  }[];
 }
 
 // ---------------------------------------------------------------- program / enrollment
@@ -255,6 +328,8 @@ export interface Message {
   openedAt: string | null;
   actedAt: string | null;
   action: MessageAction | null;
+  /** A/B variant of the campaign copy this message carries (null/absent when not an A/B campaign). */
+  variant?: VariantId | null;
 }
 
 export interface MessageActionRequest {
@@ -274,6 +349,8 @@ export interface DrEvent {
   windowEnd: string;
   status: DrEventStatus;
   campaignId: string;
+  /** Every feeder of a multi-feeder campaign (feederCode is the first). */
+  feederCodes?: string[];
 }
 
 export interface DrEventForCustomer {
@@ -384,6 +461,12 @@ export interface ReportsSummary {
     drRequests: number;
     testSends: number;
   };
+  smartCharging: {
+    homes: number;
+    flexibleKw: number;
+    shiftedKwhPerNight: number;
+    peakAvoidedMw: number;
+  };
 }
 
 export type LiveEventKind = 'EV_DETECTED' | 'STOPPED_CHARGING_CLUSTER' | 'FEEDER_FORECAST_HIGH' | 'CAMPAIGN_SENT' | 'DR_EVENT_ENDED';
@@ -418,7 +501,18 @@ export type CampaignSegment = 'UNENROLLED_EV' | 'ENROLLED_EV';
 
 export type CampaignAudience =
   | { kind: 'FEEDER'; feederCode: string; segment: CampaignSegment }
-  | { kind: 'LIVE_EVENT'; liveEventId: string; segment: CampaignSegment };
+  | { kind: 'LIVE_EVENT'; liveEventId: string; segment: CampaignSegment }
+  | { kind: 'FEEDERS'; feederCodes: string[]; segment: CampaignSegment };
+
+export type CampaignStatus = 'SCHEDULED' | 'SENDING' | 'SENT' | 'CANCELLED';
+export type VariantId = 'A' | 'B';
+
+export interface CampaignVariantCopy {
+  id: VariantId;
+  title: string;
+  body: string;
+  cta: string;
+}
 
 export interface CampaignExclusions {
   optedOut: boolean;
@@ -454,9 +548,12 @@ export interface CampaignCreateRequest {
   body: string;
   cta: string;
   channels: CampaignChannels;
-  schedule: { sendNow: boolean; expiresInHours: number };
+  /** sendAt (ISO) schedules the send when sendNow is false. */
+  schedule: { sendNow: boolean; expiresInHours: number; sendAt?: string };
   /** When set, send only to this demo customer (the "Send test to me" button). */
   testCustomerId?: string;
+  /** A/B test: variant A and B copy (title/body/cta above mirror variant A). */
+  variants?: [CampaignVariantCopy, CampaignVariantCopy];
 }
 
 export interface CampaignStats {
@@ -481,14 +578,112 @@ export interface Campaign {
   body: string;
   cta: string;
   channels: CampaignChannels;
-  status: 'SENT';
+  status: CampaignStatus;
   isTest: boolean;
+  /** Send time; the planned time while SCHEDULED. */
   sentAt: string;
   expiresAt: string;
   drEventId: string | null;
   stats: CampaignStats;
   /** Message id received by the demo customer, if they were in the audience. */
   demoMessageId: string | null;
+  scheduledFor: string | null;
+  createdAt: string;
+  createdBy: { name: string; email: string } | null;
+  variants: CampaignVariantCopy[] | null;
+  variantStats: Record<VariantId, CampaignStats> | null;
+  winner: VariantId | null;
+}
+
+// ---------------------------------------------------------------- audit log
+
+export type AuditAction =
+  | 'CAMPAIGN_SENT'
+  | 'CAMPAIGN_SCHEDULED'
+  | 'CAMPAIGN_CANCELLED'
+  | 'CAMPAIGN_TEST_SENT'
+  | 'CAMPAIGN_DISPATCHED'
+  | 'DR_STARTED'
+  | 'DR_ENDED'
+  | 'DEMO_RESET';
+
+export interface AuditEntry {
+  id: string;
+  at: string;
+  actor: { userId: string | null; name: string; email: string | null; kind: 'STAFF' | 'SYSTEM' };
+  action: AuditAction;
+  target: { kind: 'campaign' | 'drEvent' | 'demo'; id: string | null; label: string };
+  summary: string;
+}
+
+/** GET /campaigns/:id/detail */
+export interface CampaignDetail {
+  campaign: Campaign;
+  drEvent: DrEvent | null;
+  audit: AuditEntry[];
+  timeline: { at: string; label: string }[];
+}
+
+// ---------------------------------------------------------------- assistant
+
+export interface AssistantContext {
+  feederCode?: string;
+  campaignId?: string;
+  lastIntent?: string;
+  route?: string;
+}
+
+export interface AssistantRequest {
+  question: string;
+  /** Echo the previous answer's context for follow-ups. */
+  context?: AssistantContext;
+}
+
+export interface AssistantFact {
+  label: string;
+  value: string;
+  tone?: 'default' | 'good' | 'warn' | 'bad';
+}
+
+export interface AssistantChart {
+  kind: 'bar' | 'line';
+  unit: string;
+  points: { label: string; value: number; highlight?: boolean }[];
+}
+
+export interface CampaignDraftCopy {
+  title: string;
+  body: string;
+  cta: string;
+}
+
+export interface CampaignDraft {
+  type: CampaignType;
+  audience: CampaignAudience;
+  variants: [CampaignDraftCopy, CampaignDraftCopy];
+}
+
+export type AssistantAction =
+  | { kind: 'route'; label: string; route: string }
+  | { kind: 'campaignDraft'; label: string; draft: CampaignDraft };
+
+export interface AssistantAnswer {
+  intent: string;
+  matched: boolean;
+  /** Paragraphs. */
+  text: string[];
+  facts: AssistantFact[];
+  chart: AssistantChart | null;
+  followUps: string[];
+  actions: AssistantAction[];
+  context: AssistantContext;
+  generatedAt: string;
+  disclosure: string;
+}
+
+export interface AssistantSuggestions {
+  greeting: string;
+  suggestions: string[];
 }
 
 // ---------------------------------------------------------------- demo control

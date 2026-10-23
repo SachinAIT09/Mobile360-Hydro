@@ -30,13 +30,19 @@ export class CampaignStatsService {
       body: c.body,
       cta: c.cta,
       channels: c.channels,
-      status: c.status,
+      status: c.status ?? 'SENT',
       isTest: c.isTest,
       sentAt: c.sentAt.toISOString(),
       expiresAt: c.expiresAt.toISOString(),
       drEventId: c.drEventId ? String(c.drEventId) : null,
       stats: c.stats,
       demoMessageId: c.demoMessageId ? String(c.demoMessageId) : null,
+      scheduledFor: c.scheduledFor ? c.scheduledFor.toISOString() : null,
+      createdAt: (c.createdAt ?? c.sentAt).toISOString(),
+      createdBy: c.createdBy ?? null,
+      variants: c.variants ?? null,
+      variantStats: c.variantStats ?? null,
+      winner: c.winner ?? null,
     };
   }
 

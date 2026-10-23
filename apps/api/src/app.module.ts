@@ -3,7 +3,12 @@ import { APP_GUARD } from '@nestjs/core';
 import { MongooseModule } from '@nestjs/mongoose';
 import { config } from './config.js';
 import { AuthController } from './auth/auth.controller.js';
+import { AssistantController } from './assistant/assistant.controller.js';
+import { AssistantService } from './assistant/assistant.service.js';
+import { AuditController } from './audit/audit.controller.js';
+import { AuditService } from './audit/audit.service.js';
 import { AuthGuard, AuthTokens } from './auth/auth.js';
+import { CampaignDispatcher } from './campaigns/campaign-dispatcher.js';
 import { CampaignStatsService } from './campaigns/campaign-stats.service.js';
 import { CampaignsController } from './campaigns/campaigns.controller.js';
 import { CampaignsService } from './campaigns/campaigns.service.js';
@@ -16,6 +21,8 @@ import { DemoController } from './demo/demo.controller.js';
 import { DrEventsController } from './dr-events/dr-events.controller.js';
 import { DrEventsService } from './dr-events/dr-events.service.js';
 import { EnergyService } from './energy/energy.service.js';
+import { SmartChargingController } from './energy/smart-charging.controller.js';
+import { SmartChargingService } from './energy/smart-charging.service.js';
 import { EnrollmentsController } from './enrollments/enrollments.controller.js';
 import { EnrollmentsService } from './enrollments/enrollments.service.js';
 import { GridController } from './grid/grid.controller.js';
@@ -48,6 +55,9 @@ import { SimService } from './sim/sim.service.js';
     CampaignsController,
     SimController,
     DemoController,
+    AssistantController,
+    SmartChargingController,
+    AuditController,
   ],
   providers: [
     Db,
@@ -66,6 +76,10 @@ import { SimService } from './sim/sim.service.js';
     DrEventsService,
     CampaignsService,
     SimulationScheduler,
+    CampaignDispatcher,
+    AuditService,
+    SmartChargingService,
+    AssistantService,
     CustomersService,
     SimService,
     { provide: EvDetectionSource, useClass: SimulatedNet2GridSource },

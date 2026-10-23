@@ -158,6 +158,7 @@ export class CustomersService {
       nearbyOutage,
       today: { usedKwh: day.consumptionKwh, selfConsumptionPct: day.selfConsumptionPct },
       live,
+      smartCharging: null,
     };
   }
 

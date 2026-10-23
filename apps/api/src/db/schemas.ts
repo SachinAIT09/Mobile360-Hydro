@@ -1,10 +1,14 @@
 import { Schema, Types } from 'mongoose';
 import type {
+  AuditAction,
+  AuditEntry,
   CampaignAudience,
   CampaignChannels,
   CampaignExclusions,
   CampaignStats,
+  CampaignStatus,
   CampaignType,
+  CampaignVariantCopy,
   ChargerType,
   DrEventStatus,
   DrResponse,
@@ -15,7 +19,9 @@ import type {
   MessageKind,
   OutageReportType,
   PaymentMethodKind,
+  RatePlanId,
   Role,
+  VariantId,
 } from '@demo/shared';
 
 /** Model names (also the Mongo collection names, lower-cased + "s" by mongoose). */
@@ -38,6 +44,7 @@ export const M = {
   Outage: 'Outage',
   OutageReport: 'OutageReport',
   LiveEvent: 'LiveEvent',
+  AuditEntry: 'AuditEntry',
 } as const;
 
 type Id = Types.ObjectId;
@@ -142,6 +149,14 @@ export const PremiseSchema = new Schema<PremiseDoc>({
 // ---------------------------------------------------------------- people
 
 export type DemoRole = 'UNENROLLED_DEMO' | 'ENROLLED_DEMO' | null;
+/** Stored smart-charging settings; null until the customer first saves them. */
+export interface SmartChargingDoc {
+  enabled: boolean;
+  readyBy: string;
+  targetKwh: number;
+  ratePlan: RatePlanId;
+  boostUntil: Date | null;
+}
 export interface CustomerDoc {
   _id: Id;
   firstName: string;
@@ -160,6 +175,7 @@ export interface CustomerDoc {
   /** AutoPay preference; seed resets it to off. */
   autoPay: { enabled: boolean; method: PaymentMethodKind | null; since: Date | null };
   evChargingActive: boolean;
+  smartCharging: SmartChargingDoc | null;
   demoRole: DemoRole;
   synthetic: boolean;
 }
@@ -183,6 +199,7 @@ export const CustomerSchema = new Schema<CustomerDoc>({
     since: { type: Date, default: null },
   },
   evChargingActive: Boolean,
+  smartCharging: { type: Schema.Types.Mixed, default: null },
   demoRole: { type: String, default: null },
   synthetic: Boolean,
 });
@@ -286,6 +303,8 @@ export interface MessageDoc {
   openedAt: Date | null;
   actedAt: Date | null;
   action: MessageAction | null;
+  /** A/B variant of the campaign copy (null when not an A/B campaign). */
+  variant: VariantId | null;
   synthetic: boolean;
 }
 export const MessageSchema = new Schema<MessageDoc>({
@@ -304,6 +323,7 @@ export const MessageSchema = new Schema<MessageDoc>({
   openedAt: { type: Date, default: null },
   actedAt: { type: Date, default: null },
   action: { type: String, default: null },
+  variant: { type: String, default: null },
   synthetic: Boolean,
 });
 
@@ -317,14 +337,21 @@ export interface CampaignDoc {
   body: string;
   cta: string;
   channels: CampaignChannels;
-  status: 'SENT';
+  status: CampaignStatus;
   isTest: boolean;
+  /** Send time; the planned time while SCHEDULED. */
   sentAt: Date;
   expiresAt: Date;
   drEventId: Id | null;
   stats: CampaignStats;
   demoMessageId: Id | null;
   targetIds: Id[];
+  scheduledFor: Date | null;
+  createdAt: Date;
+  createdBy: { name: string; email: string } | null;
+  variants: CampaignVariantCopy[] | null;
+  variantStats: Record<VariantId, CampaignStats> | null;
+  winner: VariantId | null;
 }
 export const CampaignSchema = new Schema<CampaignDoc>({
   type: String,
@@ -335,7 +362,7 @@ export const CampaignSchema = new Schema<CampaignDoc>({
   body: String,
   cta: String,
   channels: Schema.Types.Mixed,
-  status: String,
+  status: { type: String, enum: ['SCHEDULED', 'SENDING', 'SENT', 'CANCELLED'] },
   isTest: Boolean,
   sentAt: Date,
   expiresAt: Date,
@@ -343,7 +370,14 @@ export const CampaignSchema = new Schema<CampaignDoc>({
   stats: Schema.Types.Mixed,
   demoMessageId: { type: ObjectId, default: null },
   targetIds: [ObjectId],
+  scheduledFor: { type: Date, default: null },
+  createdAt: Date,
+  createdBy: { type: Schema.Types.Mixed, default: null },
+  variants: { type: Schema.Types.Mixed, default: null },
+  variantStats: { type: Schema.Types.Mixed, default: null },
+  winner: { type: String, default: null },
 });
+CampaignSchema.index({ status: 1, scheduledFor: 1 });
 
 export interface DrEventDoc {
   _id: Id;
@@ -355,6 +389,8 @@ export interface DrEventDoc {
   status: DrEventStatus;
   campaignId: Id;
   targetCustomerIds: Id[];
+  /** All feeders of a multi-feeder campaign; feederCode is the first. */
+  feederCodes: string[];
 }
 export const DrEventSchema = new Schema<DrEventDoc>({
   feederCode: String,
@@ -365,6 +401,7 @@ export const DrEventSchema = new Schema<DrEventDoc>({
   status: String,
   campaignId: ObjectId,
   targetCustomerIds: [ObjectId],
+  feederCodes: { type: [String], default: [] },
 });
 
 export interface EventResponseDoc {
@@ -508,6 +545,25 @@ export const LiveEventSchema = new Schema<LiveEventDoc>({
   customerIds: [ObjectId],
 });
 
+// ---------------------------------------------------------------- audit log
+
+export interface AuditEntryDoc {
+  _id: Id;
+  at: Date;
+  actor: AuditEntry['actor'];
+  action: AuditAction;
+  target: AuditEntry['target'];
+  summary: string;
+}
+export const AuditEntrySchema = new Schema<AuditEntryDoc>({
+  at: { type: Date, index: true },
+  actor: Schema.Types.Mixed,
+  action: String,
+  target: Schema.Types.Mixed,
+  summary: String,
+});
+AuditEntrySchema.index({ 'target.id': 1 });
+
 export const ALL_SCHEMAS = [
   { name: M.Config, schema: ConfigSchema },
   { name: M.Substation, schema: SubstationSchema },
@@ -527,4 +583,5 @@ export const ALL_SCHEMAS = [
   { name: M.Outage, schema: OutageSchema },
   { name: M.OutageReport, schema: OutageReportSchema },
   { name: M.LiveEvent, schema: LiveEventSchema },
+  { name: M.AuditEntry, schema: AuditEntrySchema },
 ];

@@ -4,6 +4,7 @@ import type { CampaignAudience, CampaignSegment, CampaignType } from '@demo/shar
 export function campaignLink(type: CampaignType, audience: CampaignAudience): string {
   const q = new URLSearchParams({ type, segment: audience.segment });
   if (audience.kind === 'FEEDER') q.set('feeder', audience.feederCode);
+  else if (audience.kind === 'FEEDERS') q.set('feeders', audience.feederCodes.join(','));
   else q.set('liveEventId', audience.liveEventId);
   return `/campaigns/new?${q.toString()}`;
 }

@@ -1,4 +1,8 @@
 import type {
+  AssistantAnswer,
+  AssistantRequest,
+  AssistantSuggestions,
+  AuditEntry,
   AudiencePreview,
   AudiencePreviewRequest,
   AutoPayUpdateRequest,
@@ -7,6 +11,7 @@ import type {
   BillSummary,
   Campaign,
   CampaignCreateRequest,
+  CampaignDetail,
   Channels,
   CustomerProfile,
   DeadSubstation,
@@ -35,7 +40,10 @@ import type {
   Payment,
   PaymentRequest,
   Program,
+  RatePlanComparison,
   ReportsSummary,
+  SmartChargingPlan,
+  SmartChargingUpdateRequest,
   StatsOverview,
   SubstationStat,
   UsageMonth,
@@ -51,6 +59,13 @@ export const ApiPaths = {
   me: '/me/summary',
   meChannels: '/me/channels',
   meAutoPay: '/me/autopay',
+  smartCharging: '/me/smart-charging',
+  smartChargingBoost: '/me/smart-charging/boost',
+  ratePlans: '/me/rate-plans',
+  assistantStaff: '/assistant/staff',
+  assistantStaffSuggestions: '/assistant/staff/suggestions',
+  assistantMe: '/assistant/me',
+  assistantMeSuggestions: '/assistant/me/suggestions',
   energyLive: '/energy/live',
   energySummary: (range: EnergyRange) => `/energy/summary?range=${range}`,
   bills: '/bills',
@@ -81,6 +96,9 @@ export const ApiPaths = {
   liveEvents: '/live-events',
   campaigns: '/campaigns',
   campaign: (id: string) => `/campaigns/${id}`,
+  campaignDetail: (id: string) => `/campaigns/${id}/detail`,
+  campaignCancel: (id: string) => `/campaigns/${id}/cancel`,
+  audit: (limit?: number) => (limit === undefined ? '/audit' : `/audit?limit=${limit}`),
   audiencePreview: '/campaigns/preview-audience',
   demoState: '/demo/state',
   demoReset: '/demo/reset',
@@ -125,6 +143,7 @@ export function createApi(opts: ApiOptions) {
   const get = <T>(p: string) => req<T>('GET', p);
   const post = <T>(p: string, b?: unknown) => req<T>('POST', p, b ?? {});
   const patch = <T>(p: string, b: unknown) => req<T>('PATCH', p, b);
+  const put = <T>(p: string, b: unknown) => req<T>('PUT', p, b);
 
   return {
     // auth
@@ -150,6 +169,12 @@ export function createApi(opts: ApiOptions) {
     drEvent: (id: string) => get<DrEventForCustomer>(ApiPaths.drEvent(id)),
     drRespond: (id: string, b: DrRespondRequest) => post<DrEventForCustomer>(ApiPaths.drRespond(id), b),
     drResultMe: (id: string) => get<DrEventResultMe>(ApiPaths.drResultMe(id)),
+    smartCharging: () => get<SmartChargingPlan>(ApiPaths.smartCharging),
+    updateSmartCharging: (b: SmartChargingUpdateRequest) => put<SmartChargingPlan>(ApiPaths.smartCharging, b),
+    boostCharging: () => post<SmartChargingPlan>(ApiPaths.smartChargingBoost),
+    ratePlans: () => get<RatePlanComparison>(ApiPaths.ratePlans),
+    askMe: (b: AssistantRequest) => post<AssistantAnswer>(ApiPaths.assistantMe, b),
+    mySuggestions: () => get<AssistantSuggestions>(ApiPaths.assistantMeSuggestions),
     // staff
     statsOverview: () => get<StatsOverview>(ApiPaths.statsOverview),
     blindSpots: () => get<BlindSpot[]>(ApiPaths.blindSpots),
@@ -164,6 +189,11 @@ export function createApi(opts: ApiOptions) {
     campaign: (id: string) => get<Campaign>(ApiPaths.campaign(id)),
     previewAudience: (b: AudiencePreviewRequest) => post<AudiencePreview>(ApiPaths.audiencePreview, b),
     createCampaign: (b: CampaignCreateRequest) => post<Campaign>(ApiPaths.campaigns, b),
+    campaignDetail: (id: string) => get<CampaignDetail>(ApiPaths.campaignDetail(id)),
+    cancelCampaign: (id: string) => post<Campaign>(ApiPaths.campaignCancel(id)),
+    audit: (limit?: number) => get<AuditEntry[]>(ApiPaths.audit(limit)),
+    askStaff: (b: AssistantRequest) => post<AssistantAnswer>(ApiPaths.assistantStaff, b),
+    staffSuggestions: () => get<AssistantSuggestions>(ApiPaths.assistantStaffSuggestions),
     drStart: (id: string) => post<DrEvent>(ApiPaths.drStart(id)),
     drEnd: (id: string) => post<DrEvent>(ApiPaths.drEnd(id)),
     // demo

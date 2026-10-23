@@ -24,7 +24,10 @@ export type IconName =
   | 'back'
   | 'phone'
   | 'map'
-  | 'file';
+  | 'file'
+  | 'sparkle'
+  | 'clock'
+  | 'chat';
 
 const PATHS: Record<IconName, string> = {
   dashboard: 'M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z',
@@ -51,6 +54,9 @@ const PATHS: Record<IconName, string> = {
   phone: 'M7 2h10a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2zM11 18h2',
   map: 'M1 6v16l7-4 8 4 7-4V2l-7 4-8-4zM8 2v16M16 6v16',
   file: 'M6 2h9l5 5v15H6zM14 2v6h6M9 13h8M9 17h6',
+  sparkle: 'M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8zM19 16l.7 2 2 .7-2 .7-.7 2-.7-2-2-.7 2-.7z',
+  clock: 'M12 3a9 9 0 1 1 0 18 9 9 0 0 1 0-18zM12 7v5l3 2',
+  chat: 'M4 5h16v11H9l-5 4zM8 9.5h8M8 12.5h5',
 };
 
 interface IconProps extends Omit<SVGProps<SVGSVGElement>, 'name'> {

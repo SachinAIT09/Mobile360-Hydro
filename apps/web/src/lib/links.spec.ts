@@ -17,6 +17,14 @@ describe('campaignLink', () => {
     expect(q.has('feeder')).toBe(false);
   });
 
+  it('lists every feeder for a multi-feeder audience', () => {
+    const url = campaignLink('STOP_CHARGING', { kind: 'FEEDERS', feederCodes: ['SUB-01-F1', 'SUB-01-F2'], segment: 'ENROLLED_EV' });
+    const q = new URL(url, 'http://x').searchParams;
+    expect(q.get('feeders')).toBe('SUB-01-F1,SUB-01-F2');
+    expect(q.has('feeder')).toBe(false);
+    expect(q.has('liveEventId')).toBe(false);
+  });
+
   it('URL-encodes values', () => {
     const url = campaignLink('ENROLL_OFFER', { kind: 'FEEDER', feederCode: 'A B&C', segment: 'UNENROLLED_EV' });
     expect(new URL(url, 'http://x').searchParams.get('feeder')).toBe('A B&C');

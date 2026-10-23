@@ -47,6 +47,8 @@ export type IconName =
   | 'globe'
   | 'trash'
   | 'verified'
+  | 'send'
+  | 'chat'
   | 'close';
 
 interface Props {
@@ -322,6 +324,12 @@ export function Icon({ name, size = 24, color = '#0F1B2D', strokeWidth = 1.8 }: 
           <Path {...common} d="M8.5 12.5l2.5 2.5 4.5-5" />
         </>
       );
+      break;
+    case 'send':
+      body = <Path {...common} d="M21 3L10 14M21 3l-7 18-4-7-7-4z" />;
+      break;
+    case 'chat':
+      body = <Path {...common} d="M4 5h16v11H9l-5 4zM8 9.5h8M8 12.5h5" />;
       break;
   }
   return (

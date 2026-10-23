@@ -6,8 +6,10 @@ import type { MessageDoc } from '../db/schemas.js';
 import { CampaignStatsService } from '../campaigns/campaign-stats.service.js';
 import { RealtimeService } from '../realtime/realtime.service.js';
 
-export type NewMessage = Omit<MessageDoc, '_id' | 'createdAt' | 'deliveredAt' | 'openedAt' | 'actedAt' | 'action' | 'synthetic' | 'route'> & {
+export type NewMessage = Omit<MessageDoc, '_id' | 'createdAt' | 'deliveredAt' | 'openedAt' | 'actedAt' | 'action' | 'synthetic' | 'route' | 'variant'> & {
   route?: string;
+  /** A/B variant; defaults to null. */
+  variant?: MessageDoc['variant'];
   synthetic?: boolean;
   delivered?: boolean;
 };
@@ -37,6 +39,7 @@ export class MessagesService {
       openedAt: m.openedAt ? m.openedAt.toISOString() : null,
       actedAt: m.actedAt ? m.actedAt.toISOString() : null,
       action: m.action ?? null,
+      variant: m.variant ?? null,
     };
   }
 
