@@ -38,10 +38,15 @@ export async function campaigns(api: DemoApi): Promise<CampaignRow[]> {
   return api.call<CampaignRow[]>('/campaigns', 'GET', undefined, await api.staffToken());
 }
 
+/** Newest campaign of a type. Sending is async on the server, so wait up to 15 s for one to exist. */
 export async function latestCampaign(api: DemoApi, type: CampaignRow['type']): Promise<CampaignRow> {
-  const rows = (await campaigns(api)).filter((c) => c.type === type);
-  if (rows.length === 0) throw new Error(`No ${type} campaign yet`);
-  return rows[0];
+  const deadline = Date.now() + 15_000;
+  for (;;) {
+    const rows = (await campaigns(api)).filter((c) => c.type === type);
+    if (rows.length > 0) return rows[0];
+    if (Date.now() > deadline) throw new Error(`No ${type} campaign yet`);
+    await new Promise((r) => setTimeout(r, 250));
+  }
 }
 
 /** Simulations go through the API (what the demo buttons call); the UI assertions still exercise the socket path. */

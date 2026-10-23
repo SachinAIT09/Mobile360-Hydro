@@ -20,9 +20,9 @@ test.describe('Flow C: stop-charging request (DR event)', () => {
     await expect(send).toBeEnabled({ timeout: 20_000 });
     await send.click();
 
-    const state = await demoState(api);
-    expect(state.activeDrEvent, 'a DR event was created').not.toBeNull();
-    const eventId = state.activeDrEvent!.id;
+    // Sending is async on the server: wait for the DR event rather than reading state once.
+    await expect.poll(async () => (await demoState(api)).activeDrEvent?.id ?? null, { message: 'a DR event was created' }).not.toBeNull();
+    const eventId = (await demoState(api)).activeDrEvent!.id;
 
     // Phone: grid alert in the inbox → response screen.
     await mob.goto(`${urls.MOB}/messages`);
