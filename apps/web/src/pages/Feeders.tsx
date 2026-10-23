@@ -449,10 +449,10 @@ function FeederDetail({ feeder }: { feeder: FeederStat | undefined }) {
       </p>
       {split ? (
         <>
-          <Link className="btn pri" to={feederCampaignLink('ENROLL_OFFER', feeder.code, 'UNENROLLED_EV')}>
+          <Link className="btn pri wrap" to={feederCampaignLink('ENROLL_OFFER', feeder.code, 'UNENROLLED_EV')}>
             Target {feeder.unenrolled} unenrolled · enrollment offer
           </Link>
-          <Link className="btn outline" to={feederCampaignLink('STOP_CHARGING', feeder.code, 'ENROLLED_EV')}>
+          <Link className="btn outline wrap" to={feederCampaignLink('STOP_CHARGING', feeder.code, 'ENROLLED_EV')}>
             Stop-charging request to {feeder.known} enrolled
           </Link>
         </>

@@ -41,14 +41,14 @@ export default function ProfileScreen() {
           </Txt>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
             <Avatar name={`${customer.firstName} ${customer.lastName}`} size={64} onDark />
-            <View style={{ flex: 1, gap: 2 }}>
+            <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                <Txt size={22} weight="bold" color="#FFFFFF">
+                <Txt size={20} weight="bold" color="#FFFFFF" numberOfLines={1} style={{ flexShrink: 1 }}>
                   {customer.firstName} {customer.lastName}
                 </Txt>
                 <Icon name="verified" size={18} color={colors.accent} />
               </View>
-              <Txt size={13} color={colors.headerMuted}>
+              <Txt size={13} color={colors.headerMuted} numberOfLines={1}>
                 {customer.email}
               </Txt>
             </View>

@@ -108,9 +108,10 @@ function Kpi({ label, value, sub, icon, tone, dark }: { label: string; value: st
   );
 }
 
-function Card({ children, labelledBy }: { children: ReactNode; labelledBy: string }) {
+/** `wide` spans both grid columns, for tables that need the full page width. */
+function Card({ children, labelledBy, wide }: { children: ReactNode; labelledBy: string; wide?: boolean }) {
   return (
-    <section className="card pad stack gap14" aria-labelledby={labelledBy}>
+    <section className={`card pad stack gap14${wide ? ' span-all' : ''}`} aria-labelledby={labelledBy}>
       {children}
     </section>
   );
@@ -338,8 +339,59 @@ export function ReportsPage() {
           )}
         </Card>
 
+        {/* ---------------------------------------------------------------- substations */}
+        <Card labelledBy="rep-subs-h">
+          <CardHeader
+            id="rep-subs-h"
+            icon="dashboard"
+            title="Known share by substation"
+            sub="The 8 substations with the most matched EVs, by share already enrolled."
+            actions={
+              subRows.length > 0 && (
+                <ExportButton
+                  label="Export known share by substation as CSV"
+                  onClick={() => downloadCsv('known-share-by-substation.csv', ['Substation', 'Region', 'Matched EVs', 'Known %'], subRows.map((s) => [s.code, s.region, s.evs, s.knownPct]))}
+                />
+              )
+            }
+          />
+          {subs.error && <ErrorNotice message={subs.error} onRetry={() => void subs.reload()} />}
+          {subs.loading && !subs.data && <LoadingBlock rows={4} rowHeight={28} label="Loading substations" />}
+          {subRows.length > 0 && (
+            <div className="tablebox">
+              <table className="tbl fit">
+                <thead>
+                  <tr>
+                    <th scope="col">Substation</th>
+                    <th scope="col">Region</th>
+                    <th scope="col">Matched EVs</th>
+                    <th scope="col">Known share</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {subRows.map((s) => (
+                    <tr key={s.code}>
+                      <td className="mono" style={{ fontWeight: 600, color: 'var(--navy)' }}>
+                        {s.code}
+                      </td>
+                      <td>{s.region}</td>
+                      <td className="mono">{fmtInt(s.evs)}</td>
+                      <td>
+                        <span className="gapbar" aria-hidden="true">
+                          <span style={{ width: `${s.knownPct}%`, background: KNOWN }} />
+                        </span>
+                        <strong>{s.knownPct}%</strong>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </Card>
+
         {/* ---------------------------------------------------------------- DR event performance */}
-        <Card labelledBy="rep-dr-h">
+        <Card labelledBy="rep-dr-h" wide>
           <CardHeader
             id="rep-dr-h"
             icon="bolt"
@@ -418,59 +470,8 @@ export function ReportsPage() {
           )}
         </Card>
 
-        {/* ---------------------------------------------------------------- substations */}
-        <Card labelledBy="rep-subs-h">
-          <CardHeader
-            id="rep-subs-h"
-            icon="dashboard"
-            title="Known share by substation"
-            sub="The 8 substations with the most matched EVs, by share already enrolled."
-            actions={
-              subRows.length > 0 && (
-                <ExportButton
-                  label="Export known share by substation as CSV"
-                  onClick={() => downloadCsv('known-share-by-substation.csv', ['Substation', 'Region', 'Matched EVs', 'Known %'], subRows.map((s) => [s.code, s.region, s.evs, s.knownPct]))}
-                />
-              )
-            }
-          />
-          {subs.error && <ErrorNotice message={subs.error} onRetry={() => void subs.reload()} />}
-          {subs.loading && !subs.data && <LoadingBlock rows={4} rowHeight={28} label="Loading substations" />}
-          {subRows.length > 0 && (
-            <div className="tablebox">
-              <table className="tbl">
-                <thead>
-                  <tr>
-                    <th scope="col">Substation</th>
-                    <th scope="col">Region</th>
-                    <th scope="col">Matched EVs</th>
-                    <th scope="col">Known share</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {subRows.map((s) => (
-                    <tr key={s.code}>
-                      <td className="mono" style={{ fontWeight: 600, color: 'var(--navy)' }}>
-                        {s.code}
-                      </td>
-                      <td>{s.region}</td>
-                      <td className="mono">{fmtInt(s.evs)}</td>
-                      <td>
-                        <span className="gapbar" aria-hidden="true">
-                          <span style={{ width: `${s.knownPct}%`, background: KNOWN }} />
-                        </span>
-                        <strong>{s.knownPct}%</strong>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </Card>
-
         {/* ---------------------------------------------------------------- blind spots */}
-        <Card labelledBy="rep-blind-h">
+        <Card labelledBy="rep-blind-h" wide>
           <CardHeader
             id="rep-blind-h"
             icon="eye"

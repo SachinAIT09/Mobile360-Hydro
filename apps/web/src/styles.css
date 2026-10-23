@@ -355,3 +355,17 @@ table.tbl { border-collapse: separate; border-spacing: 0 6px; width: 100%; min-w
   .skeleton, .dot.reconnecting, .rowcard.fresh, .ev-row.fresh { animation: none; }
   .btn { transition: none; }
 }
+
+/* ---------- visual-pass fixes ---------- */
+/* Long action labels in narrow cards wrap instead of being clipped. */
+.btn.wrap { white-space: normal; text-align: center; line-height: 1.3; padding-top: 10px; padding-bottom: 10px; }
+/* Tables inside half-width cards fit the card rather than scrolling past their last column. */
+table.tbl.fit { min-width: 0; }
+table.tbl.fit th, table.tbl.fit td { white-space: normal; }
+@media (max-width: 640px) {
+  /* Row cards stack their trailing value/actions under the text on phones. */
+  .rowcard { flex-wrap: wrap; }
+  .rowcard .body { flex: 1 1 calc(100% - 60px); }
+}
+/* Report cards whose tables need the full content width. */
+.two > .span-all { grid-column: 1 / -1; }
