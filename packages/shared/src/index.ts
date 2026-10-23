@@ -4,3 +4,4 @@ export * from './api';
 export * from './brand';
 export * from './tokens';
 export * from './format';
+export * from './geo';

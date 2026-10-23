@@ -121,3 +121,19 @@
   .assistant-drawer, .bubble.typing span { animation: none; }
   .assistant-log { scroll-behavior: auto; }
 }
+
+/* ---------------------------------------------------------------- real feeder map (Leaflet) */
+.realmap { display: flex; flex-direction: column; gap: 10px; }
+.realmap .leaflet-container { border-radius: var(--radius-card, 16px); background: var(--surface-tint); font-family: var(--font); z-index: 0; }
+/* Mute the basemap so the coloured feeder overlays carry the meaning. */
+.realmap .leaflet-tile-pane { filter: saturate(0.35) contrast(0.95) brightness(1.04); }
+.realmap .leaflet-control-attribution { font-size: 10px; background: rgba(255, 255, 255, 0.85); }
+.rm-icon { background: none; border: 0; }
+.rm-icon:focus-visible { outline: none; }
+.rm-icon:focus-visible .rm-node svg { outline: 3px solid var(--primary); outline-offset: 3px; border-radius: 999px; }
+.rm-node { position: relative; cursor: pointer; filter: drop-shadow(0 2px 4px rgba(8, 33, 72, 0.25)); }
+.rm-node svg { display: block; }
+.rm-label { position: absolute; top: 100%; left: 50%; transform: translateX(-50%); margin-top: 2px; white-space: nowrap; text-align: center; font-size: 12px; font-weight: 700; color: var(--navy); text-shadow: 0 0 3px #fff, 0 0 3px #fff, 0 0 3px #fff; line-height: 1.15; }
+.rm-label small { display: block; font-weight: 500; font-size: 11px; color: var(--text-body); }
+.rm-badge { position: absolute; top: -8px; right: -18px; background: var(--solar); color: var(--navy); font-size: 10px; font-weight: 700; padding: 1px 5px; border-radius: 999px; }
+.rm-sub { width: 40px; height: 40px; border-radius: 10px; background: #fff; border: 2px solid var(--navy); display: grid; place-items: center; font-family: var(--mono); font-size: 12px; font-weight: 700; color: var(--navy); box-shadow: var(--shadow-card); }

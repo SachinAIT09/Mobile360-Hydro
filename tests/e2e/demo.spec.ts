@@ -52,6 +52,22 @@ test.describe('Demo controls', () => {
     await expect(web.getByRole('toolbar')).toHaveCount(0);
   });
 
+  test('staff: map view shows a real basemap (or the schematic offline) and selects feeders', async ({ web }) => {
+    await web.goto(`${urls.WEB}/feeders`);
+    await web.getByRole('button', { name: 'Map', exact: true }).click();
+    // Real tiles when online; the schematic fallback otherwise. Both expose the same labelled feeder buttons.
+    const real = web.locator('.leaflet-container');
+    const fallback = web.getByText(/schematic layout/i);
+    await expect(real.or(fallback).first()).toBeVisible({ timeout: 20_000 });
+    const f3 = web.getByRole('button', { name: /^SUB-01-F3:/ }).filter({ visible: true }).first();
+    await expect(f3).toBeVisible({ timeout: 20_000 });
+    await f3.focus();
+    await web.keyboard.press('Enter');
+    await expect(f3).toHaveAttribute('aria-pressed', 'true');
+    await expect(web.getByText('SUB-01-F3').filter({ visible: true }).first()).toBeVisible();
+    if (await real.count()) await expect(web.getByText(/illustrative/i).filter({ visible: true }).first()).toBeVisible();
+  });
+
   test('staff: reports page renders KPIs and charts; unknown route shows 404', async ({ web }) => {
     await web.goto(`${urls.WEB}/reports`);
     await expect(web.getByRole('heading', { name: /reports/i }).filter({ visible: true }).first()).toBeVisible({ timeout: 20_000 });

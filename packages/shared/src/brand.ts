@@ -22,6 +22,11 @@ export const BRAND = {
   },
   /** Town used in the seeded demo addresses. */
   demoTown: 'Peterborough',
+  /**
+   * Centre of the demo service area on the staff map. Substation and feeder positions are
+   * generated around it (packages/shared/src/geo.ts); they are illustrative, not real assets.
+   */
+  demoMapCenter: { lat: 44.3091, lng: -78.3197 },
 } as const;
 
 export const PROGRAM = {

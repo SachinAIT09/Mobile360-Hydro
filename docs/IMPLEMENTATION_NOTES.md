@@ -87,7 +87,7 @@ Stats: sent = targeted; delivered/opened/acted for real customers update on thei
 
 ## Enhancement round (Oct 23, 2026): front-end additions
 
-- **Staff app routes**: `/reports` is real (lazy-loaded chunk with Recharts; aggregations in `apps/web/src/lib/reports.ts`, data from `GET /stats/reports`, `/campaigns`, `/dr-events`, `/substations*`, `/stats/blind-spots`); `*` renders `pages/NotFound.tsx`. `/feeders` Region filter is real (filters substations + blind spots; KPIs stay global); Period only windows the Live events panel. The Map toggle renders `components/MapView.tsx`, a deterministic schematic SVG (no map provider): nodes are keyboard-selectable buttons.
+- **Staff app routes**: `/reports` is real (lazy-loaded chunk with Recharts; aggregations in `apps/web/src/lib/reports.ts`, data from `GET /stats/reports`, `/campaigns`, `/dr-events`, `/substations*`, `/stats/blind-spots`); `*` renders `pages/NotFound.tsx`. `/feeders` Region filter is real (filters substations + blind spots; KPIs stay global); Period only windows the Live events panel. The Map toggle renders `components/MapView.tsx` (see "Feeder map" below).
 - **Presenter mode**: `lib/demoScript.ts` holds the §13 script as data (talk track, expectations, one-click action, `advanceOn` socket predicate, `doneWhen` state predicate). `lib/useScript.ts` is the shared controller (progress in localStorage `h1demo.script`, synced between the `/demo` card and the bottom `PresenterBar`). `Shift+P` or `?presenter=1` toggles the bar (localStorage `h1demo.presenter`); hotkeys N/B next/back, 1/2/3 simulate EV detected / cluster / forecast, E end event, R reset keeping sessions. `/demo` also shows Preflight (API, socket, phones online, EV_ALWAYS_CHARGING, server time, next DR window) and Phone pairing (QR from `GET /demo/phone`).
 - **Connection state**: web `useConnection()` and mobile `useSession().status` expose `connected | reconnecting | offline`; both refetch after a reconnect (web: every `useLoad` re-runs on `connectionEpoch`; mobile: summary + inbox). The staff shell dot and the mobile `OfflinePill` show it.
 - **`demo:reset` payload**: `{ keepSessions }`. Mobile keeps the session, refreshes and returns Home when true; signs out when false or when the payload is missing. Demo ids are fixed, so tokens stay valid either way.
@@ -120,3 +120,10 @@ Stats: sent = targeted; delivered/opened/acted for real customers update on thei
 
 ### Other fixes this round
 - Bill due dates use calendar arithmetic (`localDatePlusDays`): adding 25 × 24 h across the Nov 1 DST change showed Nov 7 instead of Nov 8.
+
+### Feeder map (real basemap)
+- `components/MapView.tsx` lazy-loads `RealMap.tsx` (Leaflet + react-leaflet, own ~158 kB chunk) with OpenStreetMap tiles (`VITE_MAP_TILE_URL` overrides the template; attribution shown). Tiles are desaturated in CSS so feeder colours carry the meaning.
+- Positions are synthetic and deterministic (`packages/shared/src/geo.ts`): SUB-01 near `BRAND.demoMapCenter` (Peterborough), other substations on a golden-angle spiral 3–25 km out; each feeder is a 1–4 km route (length from premises) leaving at evenly spread bearings with small bends; up to 40 EV premise dots per feeder, coloured by the known/unenrolled split. The UI labels them illustrative.
+- Feeder markers are focusable buttons (`aria-label` "SUB-01-F1: 69 known, 77 unenrolled", `aria-pressed`, Enter/Space select), the same contract as the schematic.
+- Offline or blocked tiles (4 errors before any tile loads, or `navigator.onLine === false`) fall back to `components/SchematicMap.tsx` with a "Try the map again" link.
+- The production server caches `index.html` at start-up: after `pnpm build`, restart `pnpm start`.

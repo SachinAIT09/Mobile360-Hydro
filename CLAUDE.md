@@ -15,7 +15,8 @@ Read first: `docs/BUILD_SPEC.md` (scope, flows, screens), `docs/IMPLEMENTATION_N
 ## Rules
 
 - Mobile and web never talk directly. Cross-app effects go API → Socket.IO events.
-- External systems stay simulated behind interfaces: Net2Grid (`EvDetectionSource`), Kubra (`PaymentProvider`), SMS/email, maps. Never collect real payment or ID data.
+- External systems stay simulated behind interfaces: Net2Grid (`EvDetectionSource`), Kubra (`PaymentProvider`), SMS/email. Never collect real payment or ID data.
+- The staff feeder map uses real OpenStreetMap tiles (`VITE_MAP_TILE_URL` overrides) but synthetic positions from `packages/shared/src/geo.ts`, labelled illustrative; it falls back to the schematic when tiles can't load. The customer outage map is still a schematic.
 - The assistant is scripted on purpose: no LLM or network calls. Answers come from live demo data and always show the disclosure.
 - Brand values and program names are placeholders in `packages/shared/src/brand.ts`. Don't hard-code them elsewhere.
 - Match the wireframes. Don't redesign without being asked.
