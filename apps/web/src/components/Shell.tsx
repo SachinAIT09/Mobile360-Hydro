@@ -1,6 +1,9 @@
-import { Link, NavLink, Outlet } from 'react-router-dom';
-import { BRAND } from '@demo/shared';
-import { useClient, type ConnectionStatus } from '../lib/client';
+import { useCallback, useRef, useState, type FormEvent, type RefObject } from 'react';
+import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
+import { ASSISTANT, BRAND } from '@demo/shared';
+import { useAssistantChat } from '../lib/assistant';
+import { api, useClient, type ConnectionStatus } from '../lib/client';
+import { AssistantPanel } from './AssistantPanel';
 import { Icon, type IconName } from './icons';
 import { PageTitleProvider } from './PageHeader';
 import { usePageTitle } from '../lib/pageTitle';
@@ -25,22 +28,59 @@ function initials(first?: string, last?: string) {
   return s || 'ST';
 }
 
-function TopBar() {
+interface TopBarProps {
+  assistantOpen: boolean;
+  onAsk: (q: string) => void;
+  onOpenAssistant: () => void;
+  searchRef: RefObject<HTMLInputElement | null>;
+  badgeRef: RefObject<HTMLButtonElement | null>;
+}
+
+function TopBar({ assistantOpen, onAsk, onOpenAssistant, searchRef, badgeRef }: TopBarProps) {
   const { user, status } = useClient();
   const title = usePageTitle();
   const conn = CONN[status];
+  const [q, setQ] = useState('');
+
+  function submit(e: FormEvent) {
+    e.preventDefault();
+    if (q.trim()) onAsk(q);
+    else onOpenAssistant();
+    setQ('');
+  }
+
   return (
     <header className="topbar">
       <h1 className="h1">{title || BRAND.staffProductName}</h1>
       <div className="topbar-actions">
-        <label className="search">
-          <span className="sr-only">Ask about your feeders</span>
+        <form className="search" role="search" onSubmit={submit}>
+          <label htmlFor="topbar-ask" className="sr-only">
+            Ask the {ASSISTANT.staffName} about your feeders
+          </label>
           <Icon name="search" size={18} />
-          <input type="search" placeholder="Ask me anything about your feeders…" />
-        </label>
-        <span className="iconbtn grad" role="img" aria-label={`${BRAND.staffProductName} assistant`} title={BRAND.staffProductName}>
+          <input
+            id="topbar-ask"
+            ref={searchRef}
+            type="search"
+            autoComplete="off"
+            maxLength={300}
+            placeholder={ASSISTANT.placeholderStaff}
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+          />
+        </form>
+        <button
+          ref={badgeRef}
+          type="button"
+          className="iconbtn grad"
+          aria-label="Open assistant"
+          aria-haspopup="dialog"
+          aria-expanded={assistantOpen}
+          title={ASSISTANT.staffName}
+          onClick={onOpenAssistant}
+        >
           <Icon name="bolt" size={18} strokeWidth={2} />
-        </span>
+        </button>
         <span className="iconbtn" role="status" aria-live="polite" title={conn.title}>
           <Icon name="bell" size={18} />
           <span className={`dot ${conn.dot}`} aria-hidden="true" />
@@ -64,6 +104,25 @@ function TopBar() {
 export function Shell() {
   const { status, authError, retryLogin } = useClient();
   const conn = CONN[status];
+  const { pathname } = useLocation();
+  const chat = useAssistantChat(api.askStaff);
+  const [assistantOpen, setAssistantOpen] = useState(false);
+  const searchRef = useRef<HTMLInputElement>(null);
+  const badgeRef = useRef<HTMLButtonElement>(null);
+  const { ask } = chat;
+  const askAssistant = useCallback(
+    (q: string, route = pathname) => {
+      setAssistantOpen(true);
+      ask(q, route);
+    },
+    [ask, pathname],
+  );
+  const closeAssistant = useCallback(() => {
+    setAssistantOpen(false);
+    // Return focus to the search box (hidden on narrow screens, then to the assistant button).
+    const search = searchRef.current;
+    (search && search.offsetParent !== null ? search : badgeRef.current)?.focus();
+  }, []);
   return (
     <PageTitleProvider>
       <div className="shell">
@@ -103,7 +162,14 @@ export function Shell() {
           </div>
         </aside>
         <div className="main">
-          <TopBar />
+          <TopBar
+            assistantOpen={assistantOpen}
+            onAsk={askAssistant}
+            onOpenAssistant={() => setAssistantOpen(true)}
+            searchRef={searchRef}
+            badgeRef={badgeRef}
+          />
+          {assistantOpen && <AssistantPanel turns={chat.turns} busy={chat.busy} onAsk={askAssistant} onClose={closeAssistant} />}
           {authError && (
             <div className="page" style={{ paddingBottom: 0 }}>
               <div className="notice err" role="alert">
