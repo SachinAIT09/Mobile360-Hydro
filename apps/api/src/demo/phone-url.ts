@@ -1,11 +1,33 @@
 import { networkInterfaces } from 'node:os';
 import type { Request } from 'express';
 
-/** Origin the request was made to, honouring reverse-proxy headers. */
-export function originOf(req: Request): string {
-  const proto = (req.headers['x-forwarded-proto'] as string | undefined)?.split(',')[0] || req.protocol;
-  const host = (req.headers['x-forwarded-host'] as string | undefined) || req.headers.host;
+type HeaderBag = Record<string, string | string[] | undefined>;
+const first = (v: string | string[] | undefined): string | undefined => (Array.isArray(v) ? v[0] : v)?.split(',')[0]?.trim() || undefined;
+
+/**
+ * Public origin from request headers, pure so it can be tested. Reverse proxies don't all agree:
+ * Catalyst AppSail forwards HTTPS traffic as "http" with host "<name>:443", which produced
+ * http://…:443 (a 400 for phones scanning the QR code). Port 443 therefore means https, the
+ * default port for the scheme is dropped, and PUBLIC_URL (e.g. a custom domain) wins outright.
+ */
+export function originFrom(headers: HeaderBag, protocol: string, publicUrl?: string): string {
+  if (publicUrl && /^https?:\/\//i.test(publicUrl)) return new URL(publicUrl).origin;
+  let proto = (first(headers['x-forwarded-proto']) || protocol || 'http').toLowerCase().replace(/:$/, '');
+  if ((first(headers['x-forwarded-ssl']) ?? '').toLowerCase() === 'on') proto = 'https';
+  let host = first(headers['x-forwarded-host']) || first(headers.host) || 'localhost';
+  const fwdPort = first(headers['x-forwarded-port']);
+  const m = /^(.*?)(?::(\d+))?$/.exec(host);
+  const hostname = m?.[1] ?? host;
+  const port = m?.[2] ?? (fwdPort && !host.includes(':') ? fwdPort : undefined);
+  if (port === '443') proto = 'https';
+  const isDefault = (proto === 'https' && port === '443') || (proto === 'http' && port === '80');
+  host = port && !isDefault ? `${hostname}:${port}` : hostname;
   return `${proto}://${host}`;
+}
+
+/** Origin the request was made to, honouring reverse-proxy headers (and PUBLIC_URL when set). */
+export function originOf(req: Request): string {
+  return originFrom(req.headers, req.protocol, process.env.PUBLIC_URL);
 }
 
 /** First non-internal IPv4 address of this machine (what a phone on the same Wi-Fi can reach). */

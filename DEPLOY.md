@@ -124,6 +124,7 @@ The phone needs to reach the same address, so use a public URL or the server's n
 |---|---|---|
 | `MONGO_URL` | unset = built-in database | Your own MongoDB, if you want one |
 | `PORT` | `3000` | Port the server listens on |
+| `PUBLIC_URL` | unset = from the request | Public address used for the start page links and the phone QR code, e.g. your custom domain `https://ev-demo.example.com`. Behind proxies the address is worked out from the forwarded headers; set this if the QR code shows the wrong address |
 | `JWT_SECRET` | demo value | Signs the demo login tokens. Set your own |
 | `DEMO_CUSTOMER_FIRST_NAME` | `Manny` | Name of the unenrolled demo customer |
 | `DEMO_ENROLLED_CUSTOMER_FIRST_NAME` | `Priya` | Name of the enrolled demo customer |
