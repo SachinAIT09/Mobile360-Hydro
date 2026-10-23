@@ -94,3 +94,29 @@ Stats: sent = targeted; delivered/opened/acted for real customers update on thei
 - **Mobile routes added**: `/settings` (profile, channel toggles, AutoPay + bill history links, Switch account, Sign out), `/autopay` (`PATCH /me/autopay`), `/bill-history` (`GET /bills`), `/program-terms` (`PROGRAM.termsSummary`). Informational "not in this demo" notes use `components/InfoSheet.tsx` (bottom sheet), never the red `ErrorBox`. Biometric sign-in is a 700 ms mock overlay then the normal login. The Outage screen's map is `components/MapView.tsx` (react-native-svg schematic).
 - **Brand**: `BRAND.vendorName`, `BRAND.appName`, `BRAND.partners.{evDetection,payments}`, `BRAND.demoTown`, `PROGRAM.termsSummary` in `packages/shared/src/brand.ts`; no partner or utility name is hard-coded in display strings (the only literal left is `apps/mobile/app.json`, which cannot import TypeScript). PowerConnect logo assets: `packages/shared/assets/powerconnect-*.png`, mirrored in `apps/web/public/brand/` and `apps/mobile/assets/brand/`.
 - **Tests**: Vitest specs sit next to the code (`*.spec.ts`; excluded from `dist`). `tests/e2e` is Playwright Test (`fixtures.ts` gives `web`, `mob`, `api`, console-error assertion; `helpers.ts` wraps the sim/campaign API calls); specs: `flowA/B/C`, `basics`, `demo`. Serial, one shared DB. CI runs them against `node apps/api/dist/main.js` with `E2E_START_SERVER=1`.
+
+## Round 3 (Oct 23, 2026): scripted assistant, smart charging, campaign tools
+
+### Scripted assistant (no LLM, no network)
+- `POST /api/assistant/staff` (STAFF) and `POST /api/assistant/me` (CUSTOMER) take `{ question (1–300), context? }`; `GET …/suggestions` returns a greeting and suggestion chips. Stateless: the client echoes `context` (`lastIntent`, `feederCode`, `campaignId`) so "and SUB-02-F1?" follows up.
+- Pipeline: `assistant/nlu.ts` (normalise incl. typo fixes, entities: feeder codes padded to `SUB-02-F1`, month, range, campaign type, top N; weighted keyword/regex intent match with negative keywords, threshold 2) → `AssistantService` gathers only the facts the intent needs → pure `staff-answers.ts` / `customer-answers.ts`. Every answer carries `disclosure` = `ASSISTANT.disclosure`.
+- Staff intents: FEEDER_STATUS, BLIND_SPOTS, OVERVIEW, CAMPAIGN_PERFORMANCE, DR_PERFORMANCE, ENROLLMENT_TREND, GRID_RISK, DRAFT_CAMPAIGN, FLEX_LOAD, FALLBACK. Customer intents: BILL_WHY_HIGH, BILL_DUE, USAGE_TODAY, EV_COST, BEST_TIME, RATE_PLAN, SOLAR, GRID_EVENT, OUTAGE, FALLBACK.
+- Drafts (`copy-drafts.ts`): variant A social proof, B reward; merge fields checked against `MERGE_FIELDS`. Hand-off to Campaign 360 is by query string, built by `campaignDraftLink()` (web `lib/links.ts`) and read by `parseDraftParams()` (web `lib/campaignDraft.ts`): `type, segment, feeder | feeders, liveEventId, title, body, cta, titleB, bodyB, ctaB, src=assistant`.
+- UI: staff top-bar search opens a right-side drawer (`components/AssistantPanel.tsx`); customer Home "Ask the energy assistant" opens the `/assistant` sheet. Text reveals word by word (≤1.2 s, instant with reduced motion).
+
+### Smart EV charging
+- `GET/PUT /api/me/smart-charging`, `POST /api/me/smart-charging/boost` (charge now for 1 h), `GET /api/me/rate-plans`. Settings live on `customer.smartCharging`; demo customers start with it off (null), ~30% of synthetic enrolled-EV homes have it on.
+- Off: EV behaviour and cost are exactly as before. On: the plan decides EV kW (even when `evChargingActive` is true), a DR PAUSE still wins, and cost is priced on the chosen rate plan.
+- Planner (`energy/charging-plan.ts`): session from plug-in 18:00 to the next ready-by; before last night's ready-by the session is last night's, so it is stable through the day. 15-min blocks chosen by rate, then CO₂, then adjacency; SCHEDULED/ACTIVE DR events targeting the customer are excluded unless they opted out. Savings vs a baseline that charges from plug-in. `SmartChargingService.planFor` caches per customer-minute for 5 s.
+- Rates and carbon are placeholders in `brand.ts`: `RATE_PLANS` (Ontario-style TOU, ULO, tiered), `GRID_CO2_G_PER_KWH`, `SMART_CHARGING`. Bills still use their own amounts (~$0.081/kWh energy line), so the assistant explains bills from bill data only.
+- Integration math is `energy/integrate.ts` (pure, with an equivalence spec against the old implementation).
+
+### Campaign power tools
+- Audience kind `FEEDERS` (2–10 feeder codes). A stop-charging request still creates one DR event: `feederCode` = first, `feederCodes` = all.
+- Scheduling: `schedule.sendAt` between now + 1 min and now + 24 h. While SCHEDULED, `sentAt` holds the planned time (keeps list sorting). `CampaignDispatcher` polls every 5 s and claims due rows atomically (SCHEDULED → SENDING); audience and DR window are resolved at send time; an empty audience cancels; failures retry 3× a minute apart. `POST /api/campaigns/:id/cancel` only while SCHEDULED (409 otherwise). Test sends are always immediate.
+- A/B: optional `variants` [A, B]. Demo customers always get A; others split ~50/50 by hash. Stats per variant (`variantStats`), DR responses attributed through the customer's message. `winner` needs ≥20 sends per variant and a ≥3-point lead on the key rate. Variant B's simulated response is scaled 0.85–1.15 (synthetic, labelled).
+- `GET /api/campaigns/:id/detail` (campaign, DR event, timeline, audit). Staff pages `/campaigns/:id` and `/audit`.
+- Audit log (`audit` collection, `GET /api/audit`, socket `audit:new`): campaign sent / test sent / scheduled / cancelled / dispatched (actor "Scheduler"), DR started / ended, demo reset. Reset wipes it, then writes the reset entry plus 3 seeded entries by a second staff user, Jordan Reyes (`ops@demo.test`).
+
+### Other fixes this round
+- Bill due dates use calendar arithmetic (`localDatePlusDays`): adding 25 × 24 h across the Nov 1 DST change showed Nov 7 instead of Nov 8.

@@ -63,6 +63,15 @@ export function localMidnight(d: Date, tz = config.timezone): Date {
   return zonedTime(p.year, p.month, p.day, 0, 0, tz);
 }
 
+/**
+ * Local midnight `days` calendar days after year-month-day, DST-safe.
+ * Adding `days × 24 h` to a local midnight drifts by an hour when the span crosses a DST change.
+ */
+export function localDatePlusDays(year: number, month: number, day: number, days: number, tz = config.timezone): Date {
+  const d = new Date(Date.UTC(year, month - 1, day + days));
+  return zonedTime(d.getUTCFullYear(), d.getUTCMonth() + 1, d.getUTCDate(), 0, 0, tz);
+}
+
 export function addMinutes(d: Date, m: number): Date {
   return new Date(d.getTime() + m * 60000);
 }

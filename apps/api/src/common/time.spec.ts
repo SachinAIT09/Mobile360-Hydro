@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { addMinutes, fmtClock, fmtClockRange, localHour, localMidnight, localParts, nextEventWindow, zonedTime } from './time.js';
+import { addMinutes, fmtClock, localDatePlusDays, fmtClockRange, localHour, localMidnight, localParts, nextEventWindow, zonedTime } from './time.js';
 
 const TZ = 'America/Toronto';
 
@@ -96,5 +96,17 @@ describe('fmtClock / fmtClockRange', () => {
 describe('addMinutes', () => {
   it('adds whole minutes', () => {
     expect(addMinutes(new Date('2026-10-23T00:00:00Z'), 90).toISOString()).toBe('2026-10-23T01:30:00.000Z');
+  });
+});
+
+describe('localDatePlusDays', () => {
+  const TZ = 'America/Toronto';
+  it('lands on local midnight across the Nov 1 DST change (Oct 14 + 25 days = Nov 8)', () => {
+    const due = localDatePlusDays(2026, 10, 14, 25, TZ);
+    expect(localParts(due, TZ)).toMatchObject({ year: 2026, month: 11, day: 8, hour: 0, minute: 0 });
+    expect(due.toISOString()).toBe('2026-11-08T05:00:00.000Z');
+  });
+  it('rolls over month and year ends', () => {
+    expect(localParts(localDatePlusDays(2026, 12, 20, 15, TZ), TZ)).toMatchObject({ year: 2027, month: 1, day: 4 });
   });
 });

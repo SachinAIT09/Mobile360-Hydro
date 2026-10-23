@@ -16,11 +16,12 @@ Read first: `docs/BUILD_SPEC.md` (scope, flows, screens), `docs/IMPLEMENTATION_N
 
 - Mobile and web never talk directly. Cross-app effects go API → Socket.IO events.
 - External systems stay simulated behind interfaces: Net2Grid (`EvDetectionSource`), Kubra (`PaymentProvider`), SMS/email, maps. Never collect real payment or ID data.
+- The assistant is scripted on purpose: no LLM or network calls. Answers come from live demo data and always show the disclosure.
 - Brand values and program names are placeholders in `packages/shared/src/brand.ts`. Don't hard-code them elsewhere.
 - Match the wireframes. Don't redesign without being asked.
 - TypeScript strict; DTO validation on every API body; touch targets ≥ 44px; accessibility labels on icon-only buttons.
 - Lint is ESLint 10 flat config at the root (`eslint.config.mjs`) with the React Compiler rules on: no `setState` synchronously inside an effect (use promise chains or callbacks), no ref reads during render, and in `apps/web` a file that exports a component exports nothing else.
-- Unit tests are Vitest (`*.spec.ts` next to the code in `apps/api`, `apps/web/src/lib`, `packages/shared`). API tests never boot Nest DI (`AppModule`, `@nestjs/testing`): esbuild emits no decorator metadata. Test pure functions or hand-built services; the maths lives in small modules for that reason (`campaigns/merge.ts`, `campaigns/simulation-plan.ts`, `dr-events/dr-result.ts`, `grid/feeder-stat.ts`, `seed/allocate.ts`, `seed/bills.ts`).
+- Unit tests are Vitest (`*.spec.ts` next to the code in `apps/api`, `apps/web/src/lib`, `packages/shared`). API tests never boot Nest DI (`AppModule`, `@nestjs/testing`): esbuild emits no decorator metadata. Test pure functions or hand-built services; the maths lives in small modules for that reason (`campaigns/merge.ts`, `campaigns/simulation-plan.ts`, `campaigns/ab.ts`, `campaigns/schedule.ts`, `dr-events/dr-result.ts`, `grid/feeder-stat.ts`, `energy/tariff.ts`, `energy/charging-plan.ts`, `energy/integrate.ts`, `assistant/nlu.ts`, `assistant/*-answers.ts`, `assistant/copy-drafts.ts`, `seed/allocate.ts`, `seed/bills.ts`).
 - After changes: `pnpm typecheck`, `pnpm lint`, `pnpm test`, then run `pnpm dev` and `pnpm e2e` (Playwright Test in `tests/e2e`, serial, asserts live socket updates).
 
 ## Hosting

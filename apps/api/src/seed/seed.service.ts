@@ -14,7 +14,7 @@ import type {
   SubstationDoc,
 } from '../db/schemas.js';
 import { prng } from '../common/numbers.js';
-import { addMinutes, localParts, zonedTime } from '../common/time.js';
+import { addMinutes, localDatePlusDays, localParts, zonedTime } from '../common/time.js';
 import { allocateFeederEvs, regionForIndex } from './allocate.js';
 import { seedAudit } from './audit-seed.js';
 import { billAmounts, billPeriod, SEED_BILL_KWH } from './bills.js';
@@ -255,7 +255,8 @@ export class SeedService {
           kWh,
           lines,
           total,
-          dueDate: addMinutes(periodEnd, 25 * 1440), // Oct 14 + 25 days = Nov 8
+          // Calendar arithmetic, not +25×24 h: DST ends Nov 1, so adding hours lands on Nov 7 23:00 local.
+          dueDate: localDatePlusDays(period.end.year, period.end.month, 14, 25), // Oct 14 + 25 days = Nov 8
           status: endMonth === LAST_BILL_MONTH ? 'UNPAID' : 'PAID',
         };
       });
