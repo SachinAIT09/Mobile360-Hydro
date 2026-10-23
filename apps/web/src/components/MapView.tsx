@@ -1,5 +1,5 @@
 import { Suspense, lazy, useCallback, useState } from 'react';
-import type { FeederStat } from '@demo/shared';
+import type { FeederStat, SubstationStat } from '@demo/shared';
 import { SchematicMap } from './SchematicMap';
 import { LoadingBlock } from './State';
 
@@ -11,6 +11,9 @@ export interface MapViewProps {
   selected: string | null;
   onSelect: (code: string) => void;
   substationCode: string;
+  /** All substations: shown as context markers on the real map; clicking one selects it. */
+  substations?: SubstationStat[];
+  onSelectSubstation?: (code: string) => void;
 }
 
 function initiallyOnline(): boolean {
@@ -44,7 +47,7 @@ export function MapView(props: MapViewProps) {
             </button>
           </div>
         )}
-        <SchematicMap {...props} />
+        <SchematicMap feeders={props.feeders} selected={props.selected} onSelect={props.onSelect} substationCode={props.substationCode} />
       </div>
     );
   }

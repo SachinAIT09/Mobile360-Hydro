@@ -124,16 +124,57 @@
 
 /* ---------------------------------------------------------------- real feeder map (Leaflet) */
 .realmap { display: flex; flex-direction: column; gap: 10px; }
-.realmap .leaflet-container { border-radius: var(--radius-card, 16px); background: var(--surface-tint); font-family: var(--font); z-index: 0; }
-/* Mute the basemap so the coloured feeder overlays carry the meaning. */
-.realmap .leaflet-tile-pane { filter: saturate(0.35) contrast(0.95) brightness(1.04); }
+.realmap .fm-stage { position: relative; border-radius: var(--radius-card, 16px); overflow: hidden; box-shadow: inset 0 0 0 1px var(--border); }
+.realmap .leaflet-container { background: #EEF1F5; font-family: var(--font); z-index: 0; }
 .realmap .leaflet-control-attribution { font-size: 10px; background: rgba(255, 255, 255, 0.85); }
-.rm-icon { background: none; border: 0; }
-.rm-icon:focus-visible { outline: none; }
-.rm-icon:focus-visible .rm-node svg { outline: 3px solid var(--primary); outline-offset: 3px; border-radius: 999px; }
-.rm-node { position: relative; cursor: pointer; filter: drop-shadow(0 2px 4px rgba(8, 33, 72, 0.25)); }
-.rm-node svg { display: block; }
-.rm-label { position: absolute; top: 100%; left: 50%; transform: translateX(-50%); margin-top: 2px; white-space: nowrap; text-align: center; font-size: 12px; font-weight: 700; color: var(--navy); text-shadow: 0 0 3px #fff, 0 0 3px #fff, 0 0 3px #fff; line-height: 1.15; }
-.rm-label small { display: block; font-weight: 500; font-size: 11px; color: var(--text-body); }
-.rm-badge { position: absolute; top: -8px; right: -18px; background: var(--solar); color: var(--navy); font-size: 10px; font-weight: 700; padding: 1px 5px; border-radius: 999px; }
-.rm-sub { width: 40px; height: 40px; border-radius: 10px; background: #fff; border: 2px solid var(--navy); display: grid; place-items: center; font-family: var(--mono); font-size: 12px; font-weight: 700; color: var(--navy); box-shadow: var(--shadow-card); }
+.realmap .leaflet-control-layers { border: 0; border-radius: 12px; box-shadow: var(--shadow-card); font-family: var(--font); font-size: 13px; }
+.realmap .leaflet-bar { border: 0; box-shadow: var(--shadow-card); border-radius: 12px; overflow: hidden; }
+.realmap .leaflet-bar a { width: 34px; height: 34px; line-height: 34px; color: var(--navy); }
+.realmap .leaflet-control-scale-line { border-color: var(--navy-mid); color: var(--navy); background: rgba(255, 255, 255, 0.8); }
+/* Fullscreen */
+.realmap.full { position: fixed; inset: 0; z-index: 1200; background: var(--surface); padding: 12px; }
+.realmap.full .fm-stage { flex: 1; }
+.realmap.full > p { display: none; }
+/* Toolbar + legend overlays */
+.fm-toolbar { position: absolute; top: 12px; left: 56px; z-index: 500; display: flex; gap: 8px; align-items: center; }
+.fm-seg { display: inline-flex; background: #fff; border-radius: 999px; box-shadow: var(--shadow-card); padding: 3px; }
+.fm-seg button { border: 0; background: none; border-radius: 999px; padding: 7px 12px; font: 600 12px var(--font); color: var(--text-body); cursor: pointer; min-height: 32px; }
+.fm-seg button.on { background: var(--navy); color: #fff; }
+.fm-btn { width: 38px; height: 38px; display: grid; place-items: center; border: 0; border-radius: 12px; background: #fff; color: var(--navy); box-shadow: var(--shadow-card); cursor: pointer; }
+.fm-btn:hover, .fm-seg button:hover:not(.on) { background: var(--surface-tint); }
+.fm-legend { position: absolute; left: 12px; bottom: 22px; z-index: 500; display: flex; flex-direction: column; gap: 5px; background: rgba(255, 255, 255, 0.96); border-radius: 12px; box-shadow: var(--shadow-card); padding: 6px 10px; font-size: 12px; color: var(--text-body); max-width: 260px; }
+.fm-legend.open { padding: 8px 12px 10px; }
+.fm-legend-toggle { white-space: nowrap; display: inline-flex; gap: 6px; align-items: center; border: 0; background: none; padding: 2px 0; font: 700 12px var(--font); color: var(--navy); cursor: pointer; text-align: left; min-height: 28px; }
+.fm-legend .bar { width: 22px; height: 6px; border-radius: 3px; display: inline-block; background: linear-gradient(90deg, var(--solar) 0 50%, var(--ev) 50% 100%); }
+/* "Light" basemap: OpenStreetMap tiles, muted so feeders carry the colour. */
+.realmap .fm-light { filter: grayscale(0.85) brightness(1.08) contrast(0.88); }
+.fm-legend strong { font-family: var(--mono); font-size: 12px; color: var(--navy); }
+.fm-legend span { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.fm-legend .dot { width: 10px; height: 10px; border-radius: 999px; border: 1.5px solid #fff; box-shadow: 0 0 0 1px rgba(8, 33, 72, 0.2); display: inline-block; }
+.fm-legend .ln { width: 18px; height: 4px; border-radius: 2px; display: inline-block; }
+.fm-legend .ln.dash { height: 0; border-top: 3px dashed; background: none; }
+.fm-legend .ln.grad { background: linear-gradient(90deg, #C9C2F2, #2A1F66); width: 40px; }
+/* Markers */
+.fm-icon { background: none; border: 0; }
+.fm-sub { width: 34px; height: 34px; border-radius: 9px; background: var(--navy); color: #FFD166; display: grid; place-items: center; box-shadow: 0 0 0 3px #fff, 0 4px 10px rgba(8, 33, 72, 0.35); }
+.fm-sub.small { width: 22px; height: 22px; border-radius: 6px; background: #5B6B82; color: #fff; box-shadow: 0 0 0 2px #fff, 0 2px 6px rgba(8, 33, 72, 0.3); cursor: pointer; }
+.fm-sub.small svg { width: 12px; height: 12px; }
+.fm-sublabel { position: absolute; top: 40px; left: 50%; transform: translateX(-50%); background: var(--navy); color: #fff; font: 700 11px var(--mono); padding: 2px 7px; border-radius: 999px; white-space: nowrap; }
+.fm-chip { display: inline-flex; align-items: center; gap: 6px; background: #fff; border: 1.5px solid var(--border); border-radius: 999px; padding: 4px 9px 4px 8px; font: 600 12px var(--font); color: var(--text-body); white-space: nowrap; box-shadow: 0 3px 8px rgba(8, 33, 72, 0.18); cursor: pointer; transition: transform 0.12s ease; }
+.fm-chip b { color: var(--navy); font-size: 12px; }
+.fm-chip span { color: var(--muted); font-weight: 500; }
+.fm-chip em { font-style: normal; font-weight: 700; color: #fff; background: var(--danger); border-radius: 999px; padding: 0 6px; font-size: 11px; }
+.fm-chip .fm-sw { width: 8px; height: 8px; border-radius: 999px; display: inline-block; }
+.fm-chip .fm-bar { width: 34px; height: 6px; border-radius: 3px; background: var(--ev); overflow: hidden; display: inline-block; }
+.fm-chip .fm-bar > i { display: block; height: 100%; background: var(--solar); }
+.fm-chip .fm-bar.na { background: var(--split-pending); }
+.fm-chip.on { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(96, 73, 225, 0.25), 0 4px 10px rgba(8, 33, 72, 0.2); }
+.fm-chip.on b { color: var(--primary); }
+.fm-icon:hover .fm-chip { transform: translateY(-1px); }
+.fm-icon:focus-visible { outline: none; }
+.fm-icon:focus-visible .fm-chip { box-shadow: 0 0 0 3px var(--primary); }
+.fm-tip { font: 500 12px var(--font); color: var(--navy); border-radius: 8px; border: 0; box-shadow: var(--shadow-card); }
+@media (max-width: 720px) {
+  .fm-toolbar { left: 12px; top: auto; bottom: 12px; flex-wrap: wrap; }
+  .fm-legend { display: none; }
+}

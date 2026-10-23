@@ -17,6 +17,7 @@ import { prng } from '../common/numbers.js';
 import { addMinutes, localDatePlusDays, localParts, zonedTime } from '../common/time.js';
 import { allocateFeederEvs, regionForIndex } from './allocate.js';
 import { seedAudit } from './audit-seed.js';
+import { baselineForecastPct } from './forecast.js';
 import { billAmounts, billPeriod, SEED_BILL_KWH } from './bills.js';
 import {
   DEAD_SUBSTATIONS,
@@ -106,7 +107,7 @@ export class SeedService {
           live: !!live,
           premisesCount: live ? live.premises : null,
           capacityKw: 4000 + Math.round(rnd() * 2000),
-          forecastLoadPct: null,
+          forecastLoadPct: baselineForecastPct(a.code),
           staticEvs: live ? 0 : a.evs,
           seedKnown: live ? live.known : 0,
           seedUnenrolled: live ? live.unenrolled : 0,
@@ -129,7 +130,7 @@ export class SeedService {
       for (let k = 0; k < feederCount; k++) {
         feeders.push({
           code: `${code}-F${k + 1}`, substationCode: code, order: k, live: false, premisesCount: null,
-          capacityKw: 3000, forecastLoadPct: null, staticEvs: 0, seedKnown: 0, seedUnenrolled: 0,
+          capacityKw: 3000, forecastLoadPct: baselineForecastPct(`${code}-F${k + 1}`), staticEvs: 0, seedKnown: 0, seedUnenrolled: 0,
         });
       }
     });

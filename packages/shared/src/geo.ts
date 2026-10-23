@@ -102,21 +102,33 @@ export function pointAlong(route: LatLng[], t: number): LatLng {
   return route[route.length - 1];
 }
 
+/** Bearing (radians, 0 = east, counter-clockwise) of the route at fraction t. */
+function bearingAt(route: LatLng[], t: number): number {
+  const a = pointAlong(route, Math.max(0, t - 0.01));
+  const b = pointAlong(route, Math.min(1, t + 0.01));
+  const x = (b.lng - a.lng) * Math.cos((a.lat * Math.PI) / 180);
+  const y = b.lat - a.lat;
+  return x === 0 && y === 0 ? 0 : Math.atan2(y, x);
+}
+
 /**
- * EV premises scattered beside the route (up to `max` dots, within ~150 m of the line).
- * Known vs unenrolled follows the feeder's split; `unknown` when the split is not in the sample.
+ * EV premises along the route like houses on a street: set back 30–70 m on alternating sides of the
+ * line, at irregular spacing. Known vs unenrolled follows the feeder's split; `unknown` when the split
+ * is not in the sample. At most `max` dots.
  */
 export function premisePoints(route: LatLng[], feederCode: string, evs: number, known: number | null, max = 40): PremisePoint[] {
   const n = Math.min(max, Math.max(0, evs));
   if (n === 0) return [];
   const knownDots = known === null ? 0 : Math.round((n * known) / Math.max(1, evs));
-  // Shuffle which dots are "known" deterministically so the colours mix along the line.
+  // Shuffle which dots are "known" deterministically so the colours mix along the street.
   const order = Array.from({ length: n }, (_, k) => k).sort((a, b) => hash01(`${feederCode}:k${a}`) - hash01(`${feederCode}:k${b}`));
   const knownSet = new Set(order.slice(0, knownDots));
   return Array.from({ length: n }, (_, k) => {
-    const along = pointAlong(route, 0.08 + 0.9 * ((k + hash01(`${feederCode}:t${k}`)) / n));
-    const side = (hash01(`${feederCode}:s${k}`) - 0.5) * 0.3; // ±150 m
-    const p = offsetKm(along, hash01(`${feederCode}:a${k}`) * Math.PI * 2, Math.abs(side));
+    const t = 0.06 + 0.92 * ((k + 0.85 * hash01(`${feederCode}:t${k}`)) / n);
+    const along = pointAlong(route, t);
+    const side = hash01(`${feederCode}:s${k}`) < 0.5 ? 1 : -1;
+    const setbackKm = 0.03 + 0.04 * hash01(`${feederCode}:d${k}`);
+    const p = offsetKm(along, bearingAt(route, t) + (side * Math.PI) / 2, setbackKm);
     const kind: PremiseKind = known === null ? 'unknown' : knownSet.has(k) ? 'known' : 'unenrolled';
     return { ...p, kind };
   });

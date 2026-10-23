@@ -178,7 +178,7 @@ export function FeedersPage() {
 
           {view === 'map' ? (
             feeders.data && feeders.data.length > 0 && subCode ? (
-              <MapView feeders={feeders.data} selected={feederCode} onSelect={setFeederCode} substationCode={subCode} />
+              <MapView feeders={feeders.data} selected={feederCode} onSelect={setFeederCode} substationCode={subCode} substations={visibleSubs} onSelectSubstation={setSubCode} />
             ) : (
               <div className="mapph">
                 <span>

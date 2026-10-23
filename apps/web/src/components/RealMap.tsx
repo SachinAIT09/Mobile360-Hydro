@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useRef } from 'react';
-import { CircleMarker, MapContainer, Marker, Polyline, TileLayer, useMap } from 'react-leaflet';
-import L, { type LatLngBoundsExpression, type Marker as LeafletMarker } from 'leaflet';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { CircleMarker, LayersControl, MapContainer, Marker, Polyline, TileLayer, Tooltip, useMap } from 'react-leaflet';
+import L, { type LatLngBoundsExpression, type Map as LeafletMap, type Marker as LeafletMarker } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import {
   BRAND,
@@ -11,7 +11,11 @@ import {
   substationPosition,
   type FeederStat,
   type LatLng,
+  type PremiseKind,
+  type SubstationStat,
 } from '@demo/shared';
+import routesFile from '../data/feeder-routes.json';
+import { Icon } from './icons';
 import './addons.css';
 
 export interface RealMapProps {
@@ -19,75 +23,116 @@ export interface RealMapProps {
   selected: string | null;
   onSelect: (code: string) => void;
   substationCode: string;
+  /** All substations, drawn as small context markers that switch the selection. */
+  substations?: SubstationStat[];
+  onSelectSubstation?: (code: string) => void;
   /** Called once when tiles keep failing (e.g. offline), so the parent can fall back to the schematic. */
   onTilesFailed: () => void;
 }
 
-const TILE_URL: string = (import.meta.env.VITE_MAP_TILE_URL as string | undefined) || 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
-const TILE_ATTRIBUTION = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
+/** Pre-generated street routes (scripts/gen-feeder-routes.mjs). Missing entries fall back to synthetic routes. */
+interface RoutesFile {
+  substations: Record<string, { at: [number, number]; feeders: Record<string, [number, number][]> }>;
+}
+const ROUTES = routesFile as unknown as RoutesFile;
+
+const OSM_ATTR = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
+const OSM_URL = (import.meta.env.VITE_MAP_TILE_URL as string | undefined) || 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
+// "Light" is OpenStreetMap tiles muted in CSS (.fm-light), so no API key is needed.
+const BASEMAPS = [
+  { name: 'Light', url: OSM_URL, attribution: OSM_ATTR, className: 'fm-light' },
+  { name: 'Streets', url: OSM_URL, attribution: OSM_ATTR, className: '' },
+  {
+    name: 'Satellite',
+    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+    attribution: 'Imagery &copy; Esri, Maxar, Earthstar Geographics, and the GIS User Community',
+    className: '',
+  },
+] as const;
+
+type ColorBy = 'network' | 'forecast' | 'gap';
 const FORECAST_ALERT_PCT = 90;
+const DOT_FILL: Record<PremiseKind, string> = { known: colors.solar, unenrolled: colors.ev, unknown: colors.splitPending };
+const DOT_LABEL: Record<PremiseKind, string> = { known: 'EV · enrolled in the program', unenrolled: 'EV detected · not enrolled', unknown: 'EV · split not in sample' };
 
 const toLL = (p: LatLng): [number, number] => [p.lat, p.lng];
-
-// Path colours go through Leaflet style options (react-leaflet only applies a path's CSS class at creation).
-const DOT_FILL = { known: colors.solar, unenrolled: colors.ev, unknown: colors.splitPending } as const;
-function lineStyle(selected: boolean, alert: boolean) {
-  if (selected) return { color: colors.primary, weight: 5, opacity: 0.95, dashArray: undefined };
-  if (alert) return { color: colors.solar, weight: 4, opacity: 0.95, dashArray: '8 6' };
-  return { color: colors.navyMid, weight: 3.5, opacity: 0.55, dashArray: undefined };
-}
+const fromLL = ([lat, lng]: [number, number]): LatLng => ({ lat, lng });
 
 function shortCode(code: string, sub: string) {
   return code.startsWith(`${sub}-`) ? code.slice(sub.length + 1) : code;
 }
 
-/** Donut ring (known amber / unenrolled indigo, grey when the split is unknown) as an HTML string for a divIcon. */
-function donutHtml(f: FeederStat, size: number, label: string, selected: boolean, alert: boolean): string {
-  const r = size / 2 - 4;
-  const c = 2 * Math.PI * r;
-  const split = f.known !== null && f.unenrolled !== null && f.evs > 0;
-  const knownLen = split ? (c * (f.known ?? 0)) / f.evs : 0;
-  const ring = split
-    ? `<circle r="${r}" cx="${size / 2}" cy="${size / 2}" style="stroke:var(--ev)" stroke-width="6" fill="none"/>` +
-      `<circle r="${r}" cx="${size / 2}" cy="${size / 2}" style="stroke:var(--solar)" stroke-width="6" fill="none" stroke-dasharray="${knownLen.toFixed(2)} ${c.toFixed(2)}" transform="rotate(-90 ${size / 2} ${size / 2})"/>`
-    : `<circle r="${r}" cx="${size / 2}" cy="${size / 2}" style="stroke:var(--split-pending)" stroke-width="6" fill="none"/>`;
-  const halo = selected ? `<circle r="${size / 2 - 0.5}" cx="${size / 2}" cy="${size / 2}" style="stroke:var(--primary)" stroke-width="2.5" fill="none"/>` : '';
-  const badge = alert ? `<span class="rm-badge">${f.forecastLoadPct}%</span>` : '';
+function forecastColor(pct: number | null): string {
+  if (pct === null) return colors.splitPending;
+  if (pct >= FORECAST_ALERT_PCT) return colors.danger;
+  if (pct >= 70) return colors.solar;
+  return colors.success;
+}
+
+/** Blind-spot share → light lilac to deep indigo. */
+function gapColor(pct: number | null): string {
+  if (pct === null) return colors.splitPending;
+  const t = Math.min(1, Math.max(0, pct / 100));
+  const mix = (a: number, b: number) => Math.round(a + (b - a) * t);
+  // #C9C2F2 → #2A1F66
+  return `rgb(${mix(0xc9, 0x2a)}, ${mix(0xc2, 0x1f)}, ${mix(0xf2, 0x66)})`;
+}
+
+function lineColor(f: FeederStat, colorBy: ColorBy): string {
+  if (colorBy === 'forecast') return forecastColor(f.forecastLoadPct);
+  if (colorBy === 'gap') return gapColor(f.invisiblePct);
+  return colors.navyMid;
+}
+
+function chipHtml(f: FeederStat, label: string, selected: boolean, colorBy: ColorBy): string {
+  const split = f.known !== null && f.evs > 0;
+  const knownPct = split ? Math.round(((f.known ?? 0) / f.evs) * 100) : 0;
+  const alert = (f.forecastLoadPct ?? 0) >= FORECAST_ALERT_PCT;
+  const swatch = colorBy === 'network' ? '' : `<i class="fm-sw" style="background:${lineColor(f, colorBy)}"></i>`;
   return (
-    `<div class="rm-node${selected ? ' on' : ''}" style="width:${size}px">` +
-    `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" aria-hidden="true"><circle r="${r}" cx="${size / 2}" cy="${size / 2}" fill="#fff"/>${ring}${halo}</svg>` +
-    `<span class="rm-label">${label}<small>${f.evs} EVs</small></span>${badge}</div>`
+    `<div class="fm-chip${selected ? ' on' : ''}${alert ? ' alert' : ''}">` +
+    `${swatch}<b>${label}</b><span>${f.evs} EVs</span>` +
+    (split ? `<i class="fm-bar" title=""><i style="width:${knownPct}%"></i></i>` : '<i class="fm-bar na"></i>') +
+    (alert ? `<em>${f.forecastLoadPct}%</em>` : '') +
+    `</div>`
   );
 }
 
-function FitBounds({ bounds, substationCode }: { bounds: LatLngBoundsExpression; substationCode: string }) {
+function FitOnSubstation({ bounds, substationCode }: { bounds: LatLngBoundsExpression; substationCode: string }) {
   const map = useMap();
   const last = useRef<string | null>(null);
   useEffect(() => {
     // Refit only when the substation changes, so selecting a feeder doesn't move the view.
     if (last.current === substationCode) return;
     last.current = substationCode;
-    map.fitBounds(bounds, { padding: [36, 36], maxZoom: 15 });
+    map.fitBounds(bounds, { padding: [48, 48], maxZoom: 16 });
   }, [map, bounds, substationCode]);
   return null;
 }
 
-/** A focusable, labelled feeder marker. Leaflet fires `click` on Enter for keyboard users. */
-function FeederMarker({ f, position, size, label, ariaLabel, selected, alert, onSelect }: {
+function ScaleBar() {
+  const map = useMap();
+  useEffect(() => {
+    const c = L.control.scale({ imperial: false, position: 'bottomright' }).addTo(map);
+    return () => {
+      c.remove();
+    };
+  }, [map]);
+  return null;
+}
+
+/** Feeder label chip at the end of the route: a focusable button; Enter/Space select. */
+function FeederChip({ f, position, html, ariaLabel, selected, tooltip, onSelect }: {
   f: FeederStat;
   position: [number, number];
-  size: number;
-  label: string;
+  html: string;
   ariaLabel: string;
   selected: boolean;
-  alert: boolean;
+  tooltip: string;
   onSelect: (code: string) => void;
 }) {
   const ref = useRef<LeafletMarker | null>(null);
-  const icon = useMemo(
-    () => L.divIcon({ className: 'rm-icon', html: donutHtml(f, size, label, selected, alert), iconSize: [size, size], iconAnchor: [size / 2, size / 2] }),
-    [f, size, label, selected, alert],
-  );
+  const icon = useMemo(() => L.divIcon({ className: 'fm-icon', html, iconSize: undefined, iconAnchor: [-8, 14] }), [html]);
   useEffect(() => {
     const el = ref.current?.getElement();
     if (!el) return;
@@ -95,7 +140,6 @@ function FeederMarker({ f, position, size, label, ariaLabel, selected, alert, on
     el.setAttribute('tabindex', '0');
     el.setAttribute('aria-label', ariaLabel);
     el.setAttribute('aria-pressed', String(selected));
-    // Enter / Space select the feeder, like the schematic's buttons.
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Enter' || e.key === ' ') {
         e.preventDefault();
@@ -106,23 +150,32 @@ function FeederMarker({ f, position, size, label, ariaLabel, selected, alert, on
     el.addEventListener('keydown', onKey);
     return () => el.removeEventListener('keydown', onKey);
   }, [ariaLabel, selected, icon, onSelect, f.code]);
-  return <Marker ref={ref} position={position} icon={icon} keyboard eventHandlers={{ click: () => onSelect(f.code) }} />;
+  return (
+    <Marker ref={ref} position={position} icon={icon} keyboard zIndexOffset={selected ? 1000 : 0} eventHandlers={{ click: () => onSelect(f.code) }}>
+      <Tooltip direction="top" offset={[40, -16]} opacity={1} className="fm-tip">
+        {tooltip}
+      </Tooltip>
+    </Marker>
+  );
 }
 
-/** Real basemap (OpenStreetMap tiles) with synthetic substation and feeder positions. */
-export default function RealMap({ feeders, selected, onSelect, substationCode, onTilesFailed }: RealMapProps) {
+const SUB_ICON_SVG =
+  '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M13 2 4 14h7l-1 8 9-12h-7z" fill="currentColor"/></svg>';
+
+/** Real basemap with feeders routed along actual streets; positions are illustrative. */
+export default function RealMap({ feeders, selected, onSelect, substationCode, substations, onSelectSubstation, onTilesFailed }: RealMapProps) {
+  const [colorBy, setColorBy] = useState<ColorBy>('network');
+  const [full, setFull] = useState(false);
+  const [legendOpen, setLegendOpen] = useState(false);
+  const mapRef = useRef<LeafletMap | null>(null);
+
   const layout = useMemo(() => {
-    const origin = substationPosition(substationCode);
-    const maxEvs = Math.max(1, ...feeders.map((f) => f.evs));
+    const stored = ROUTES.substations[substationCode];
+    const origin = stored ? fromLL(stored.at) : substationPosition(substationCode);
     const items = feeders.map((f, i) => {
-      const route = feederRoute(substationCode, f.code, i, feeders.length, feederLengthKm(f.premises, f.evs), origin);
-      return {
-        f,
-        route,
-        end: route[route.length - 1],
-        dots: premisePoints(route, f.code, f.evs, f.known),
-        size: Math.round(26 + 22 * Math.sqrt(f.evs / maxEvs)),
-      };
+      const storedRoute = stored?.feeders[f.code];
+      const route = storedRoute && storedRoute.length > 1 ? storedRoute.map(fromLL) : feederRoute(substationCode, f.code, i, feeders.length, feederLengthKm(f.premises, f.evs), origin);
+      return { f, route, end: route[route.length - 1], dots: premisePoints(route, f.code, f.evs, f.known) };
     });
     const all = [origin, ...items.flatMap((it) => it.route)];
     const bounds: LatLngBoundsExpression = [
@@ -132,7 +185,15 @@ export default function RealMap({ feeders, selected, onSelect, substationCode, o
     return { origin, items, bounds };
   }, [feeders, substationCode]);
 
-  // Tile health: fall back once if tiles keep failing before any loads (offline, blocked network).
+  const others = useMemo(
+    () =>
+      (substations ?? [])
+        .filter((s) => s.code !== substationCode)
+        .map((s) => ({ s, at: ROUTES.substations[s.code] ? fromLL(ROUTES.substations[s.code].at) : substationPosition(s.code) })),
+    [substations, substationCode],
+  );
+
+  // Tile health: fall back once if every tile fails before any loads (offline, blocked network).
   const tiles = useRef({ ok: 0, failed: 0, reported: false });
   const tileHandlers = useMemo(
     () => ({
@@ -154,77 +215,200 @@ export default function RealMap({ feeders, selected, onSelect, substationCode, o
   const subIcon = useMemo(
     () =>
       L.divIcon({
-        className: 'rm-icon',
-        html: `<div class="rm-sub"><span>${substationCode.replace('SUB-', 'S')}</span></div>`,
-        iconSize: [40, 40],
-        iconAnchor: [20, 20],
+        className: 'fm-icon',
+        html: `<div class="fm-sub">${SUB_ICON_SVG}</div><div class="fm-sublabel">${substationCode}</div>`,
+        iconSize: [34, 34],
+        iconAnchor: [17, 17],
       }),
     [substationCode],
   );
+  const otherIcon = useMemo(() => L.divIcon({ className: 'fm-icon', html: `<div class="fm-sub small">${SUB_ICON_SVG}</div>`, iconSize: [22, 22], iconAnchor: [11, 11] }), []);
+
+  const fit = useCallback(() => mapRef.current?.fitBounds(layout.bounds, { padding: [48, 48], maxZoom: 16 }), [layout.bounds]);
+
+  // Fullscreen: resize the map after the layout change; Esc leaves fullscreen.
+  useEffect(() => {
+    const m = mapRef.current;
+    if (!m) return;
+    const t = window.setTimeout(() => m.invalidateSize(), 60);
+    if (!full) return () => window.clearTimeout(t);
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setFull(false);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => {
+      window.clearTimeout(t);
+      window.removeEventListener('keydown', onKey);
+    };
+  }, [full]);
+
+  // Keep map gestures from firing when the toolbar is used.
+  const stopRef = useCallback((el: HTMLDivElement | null) => {
+    if (el) {
+      L.DomEvent.disableClickPropagation(el);
+      L.DomEvent.disableScrollPropagation(el);
+    }
+  }, []);
+
+  const selectedItem = layout.items.find((it) => it.f.code === selected);
 
   return (
-    <div className="realmap" role="group" aria-label={`Map of ${substationCode} feeders. Select a feeder marker to see its details.`}>
-      <MapContainer center={toLL(layout.origin)} zoom={13} scrollWheelZoom={false} style={{ height: 420, width: '100%' }} attributionControl>
-        <TileLayer url={TILE_URL} attribution={TILE_ATTRIBUTION} maxZoom={18} eventHandlers={tileHandlers} />
-        <FitBounds bounds={layout.bounds} substationCode={substationCode} />
-        {layout.items.map(({ f, route }) => (
-          <Polyline
-            key={`line-${f.code}`}
-            positions={route.map(toLL)}
-            interactive={false}
-            pathOptions={lineStyle(f.code === selected, (f.forecastLoadPct ?? 0) >= FORECAST_ALERT_PCT)}
-          />
-        ))}
-        {layout.items.flatMap(({ f, dots }) =>
-          dots.map((d, k) => (
-            <CircleMarker
-              key={`dot-${f.code}-${k}`}
-              center={toLL(d)}
-              radius={3}
-              interactive={false}
-              pathOptions={{ color: '#FFFFFF', weight: 1, fillColor: DOT_FILL[d.kind], fillOpacity: 0.95 }}
-            />
-          )),
-        )}
-        <Marker position={toLL(layout.origin)} icon={subIcon} interactive={false} keyboard={false} />
-        {layout.items.map(({ f, end, size }) => {
-          const label = shortCode(f.code, substationCode);
-          const split = f.known !== null && f.unenrolled !== null ? `${f.known} known, ${f.unenrolled} unenrolled` : `${f.evs} EVs, split not in sample`;
-          return (
-            <FeederMarker
-              key={`node-${f.code}`}
-              f={f}
-              position={toLL(end)}
-              size={size}
-              label={label}
-              ariaLabel={`${f.code}: ${split}`}
-              selected={f.code === selected}
-              alert={(f.forecastLoadPct ?? 0) >= FORECAST_ALERT_PCT}
-              onSelect={onSelect}
-            />
-          );
-        })}
-      </MapContainer>
-      <div className="legend">
-        <span>
-          <span className="sw" style={{ background: 'var(--solar)' }} />
-          Known / enrolled
-        </span>
-        <span>
-          <span className="sw" style={{ background: 'var(--ev)' }} />
-          Detected, unenrolled
-        </span>
-        <span>
-          <span className="sw" style={{ background: 'var(--split-pending)' }} />
-          Split not in sample
-        </span>
-        <span>
-          <span className="sw" style={{ background: 'var(--solar)', borderRadius: 999 }} />
-          Forecast ≥ {FORECAST_ALERT_PCT}% of capacity
-        </span>
+    <div className={`realmap${full ? ' full' : ''}`} role="group" aria-label={`Map of ${substationCode} feeders. Select a feeder label to see its details.`}>
+      <div className="fm-stage">
+        <MapContainer ref={mapRef} center={toLL(layout.origin)} zoom={14} scrollWheelZoom={full} style={{ height: full ? '100%' : 480, width: '100%' }} attributionControl zoomSnap={0.5}>
+          <LayersControl position="topright">
+            {BASEMAPS.map((b, i) => (
+              <LayersControl.BaseLayer key={b.name} name={b.name} checked={i === 0}>
+                <TileLayer url={b.url} attribution={b.attribution} className={b.className} maxZoom={19} eventHandlers={tileHandlers} />
+              </LayersControl.BaseLayer>
+            ))}
+          </LayersControl>
+          <FitOnSubstation bounds={layout.bounds} substationCode={substationCode} />
+          <ScaleBar />
+
+          {others.map(({ s, at }) => (
+            <Marker
+              key={`sub-${s.code}`}
+              position={toLL(at)}
+              icon={otherIcon}
+              keyboard
+              title={`${s.code} · ${s.evs} EVs`}
+              eventHandlers={{ click: () => onSelectSubstation?.(s.code) }}
+            >
+              <Tooltip direction="top" offset={[0, -10]} className="fm-tip">
+                {s.code} · {s.evs} EVs · {s.knownPct}% known{onSelectSubstation ? ' · click to open' : ''}
+              </Tooltip>
+            </Marker>
+          ))}
+
+          {/* EV premises first, so the feeder lines draw over them like streets between houses. */}
+          {layout.items.flatMap(({ f, dots }) =>
+            dots.map((d, k) => (
+              <CircleMarker key={`dot-${f.code}-${k}`} center={toLL(d)} radius={3.2} pathOptions={{ color: '#FFFFFF', weight: 1, fillColor: DOT_FILL[d.kind], fillOpacity: 1 }}>
+                <Tooltip direction="top" offset={[0, -4]} className="fm-tip">
+                  {DOT_LABEL[d.kind]} · {f.code}
+                </Tooltip>
+              </CircleMarker>
+            )),
+          )}
+
+          {/* Casing under every line, then the coloured core, then a glow under the selected feeder. */}
+          {layout.items.map(({ f, route }) => (
+            <Polyline key={`case-${f.code}`} positions={route.map(toLL)} interactive={false} pathOptions={{ color: '#FFFFFF', weight: 6.5, opacity: 0.95, lineCap: 'round', lineJoin: 'round' }} />
+          ))}
+          {selectedItem && (
+            <Polyline positions={selectedItem.route.map(toLL)} interactive={false} pathOptions={{ color: colors.primary, weight: 16, opacity: 0.18, lineCap: 'round', lineJoin: 'round' }} />
+          )}
+          {layout.items.map(({ f, route }) => {
+            const on = f.code === selected;
+            const alert = colorBy === 'network' && (f.forecastLoadPct ?? 0) >= FORECAST_ALERT_PCT;
+            return (
+              <Polyline
+                key={`core-${f.code}`}
+                positions={route.map(toLL)}
+                interactive={false}
+                pathOptions={{
+                  color: on && colorBy === 'network' ? colors.primary : alert ? colors.danger : lineColor(f, colorBy),
+                  weight: on ? 5 : 3.5,
+                  opacity: on ? 1 : 0.88,
+                  dashArray: alert ? '10 7' : undefined,
+                  lineCap: 'round',
+                  lineJoin: 'round',
+                }}
+              />
+            );
+          })}
+
+          {layout.items.map(({ f, end }) => (
+            <CircleMarker key={`end-${f.code}`} center={toLL(end)} radius={5} interactive={false} pathOptions={{ color: '#FFFFFF', weight: 2, fillColor: f.code === selected ? colors.primary : colors.navyMid, fillOpacity: 1 }} />
+          ))}
+
+          <Marker position={toLL(layout.origin)} icon={subIcon} interactive={false} keyboard={false} zIndexOffset={2000} />
+
+          {layout.items.map(({ f, end }) => {
+            const label = shortCode(f.code, substationCode);
+            const split = f.known !== null && f.unenrolled !== null ? `${f.known} known, ${f.unenrolled} unenrolled` : `${f.evs} EVs, split not in sample`;
+            const forecast = f.forecastLoadPct !== null ? ` · forecast ${f.forecastLoadPct}% of capacity` : '';
+            return (
+              <FeederChip
+                key={`chip-${f.code}`}
+                f={f}
+                position={toLL(end)}
+                html={chipHtml(f, label, f.code === selected, colorBy)}
+                ariaLabel={`${f.code}: ${split}`}
+                selected={f.code === selected}
+                tooltip={`${f.code} · ${split}${forecast}`}
+                onSelect={onSelect}
+              />
+            );
+          })}
+        </MapContainer>
+
+        <div className="fm-toolbar" ref={stopRef}>
+          <div className="fm-seg" role="group" aria-label="Colour feeders by">
+            {(
+              [
+                ['network', 'Network'],
+                ['forecast', 'Forecast load'],
+                ['gap', 'Blind spot'],
+              ] as const
+            ).map(([k, label]) => (
+              <button key={k} type="button" className={colorBy === k ? 'on' : ''} aria-pressed={colorBy === k} onClick={() => setColorBy(k)}>
+                {label}
+              </button>
+            ))}
+          </div>
+          <button type="button" className="fm-btn" onClick={fit} aria-label="Fit map to substation" title="Fit to substation">
+            <Icon name="map" size={16} />
+          </button>
+          <button type="button" className="fm-btn" onClick={() => setFull((v) => !v)} aria-pressed={full} aria-label={full ? 'Exit full screen map' : 'Full screen map'} title={full ? 'Exit full screen (Esc)' : 'Full screen'}>
+            <Icon name={full ? 'back' : 'open'} size={16} />
+          </button>
+        </div>
+
+        <div className={`fm-legend${legendOpen ? ' open' : ''}`} ref={stopRef}>
+          <button type="button" className="fm-legend-toggle" aria-expanded={legendOpen} onClick={() => setLegendOpen((v) => !v)}>
+            Legend <span aria-hidden="true">{legendOpen ? '▾' : '▸'}</span>
+          </button>
+          {legendOpen && (
+            <>
+          <strong>{substationCode}</strong>
+          <span>
+            <i className="dot" style={{ background: colors.solar }} /> EV enrolled
+          </span>
+          <span>
+            <i className="dot" style={{ background: colors.ev }} /> EV detected, not enrolled
+          </span>
+          {colorBy === 'network' && (
+            <>
+              <span>
+                <i className="ln" style={{ background: colors.navyMid }} /> Feeder route
+              </span>
+              <span>
+                <i className="ln dash" style={{ borderColor: colors.danger }} /> Forecast ≥ {FORECAST_ALERT_PCT}%
+              </span>
+            </>
+          )}
+          {colorBy === 'forecast' && (
+            <span className="ramp">
+              <i className="ln" style={{ background: colors.success }} /> &lt;70% <i className="ln" style={{ background: colors.solar }} /> 70–89% <i className="ln" style={{ background: colors.danger }} /> ≥90%
+            </span>
+          )}
+          {colorBy === 'gap' && (
+            <span className="ramp">
+              <i className="ln grad" /> Share of EVs not enrolled, low → high
+            </span>
+          )}
+          <span>
+            <i className="bar" /> Label bar: enrolled vs not enrolled
+          </span>
+            </>
+          )}
+        </div>
       </div>
       <p className="small muted">
-        Feeder routes and EV premises are illustrative, placed around {BRAND.demoTown} until {BRAND.utilityName} GIS data is connected. Dots: up to 40 EV premises per feeder.
+        Feeder routes follow real streets, but positions are illustrative, placed around {BRAND.demoTown} until {BRAND.utilityName} GIS data is connected. Dots: up to 40 EV premises per
+        feeder. Switch basemap (Light, Streets, Satellite) with the layers button.
       </p>
     </div>
   );

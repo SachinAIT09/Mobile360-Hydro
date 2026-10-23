@@ -70,12 +70,12 @@ describe('premisePoints', () => {
   it('marks every dot unknown when the split is not in the sample', () => {
     expect(premisePoints(route, 'SUB-09-F1', 12, null).every((p) => p.kind === 'unknown')).toBe(true);
   });
-  it('keeps dots within about 200 m of the route and is deterministic', () => {
+  it('sets dots back 25–75 m from the street and is deterministic', () => {
     const pts = premisePoints(route, 'SUB-01-F1', 30, 10);
     expect(pts).toEqual(premisePoints(route, 'SUB-01-F1', 30, 10));
     for (const p of pts) {
-      const nearest = Math.min(...Array.from({ length: 41 }, (_, i) => distanceKm(p, pointAlong(route, i / 40))));
-      expect(nearest).toBeLessThan(0.25);
+      const nearest = Math.min(...Array.from({ length: 601 }, (_, i) => distanceKm(p, pointAlong(route, i / 600))));
+      expect(nearest).toBeLessThan(0.075);
     }
   });
   it('returns nothing for a feeder without EVs', () => {
