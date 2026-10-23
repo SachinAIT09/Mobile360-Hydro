@@ -62,7 +62,8 @@ export function ClientProvider({ children }: { children: ReactNode }) {
 
   // The socket object is created per token (no network until connect()); the effect below connects it.
   const socket = useMemo<AppSocket | null>(
-    () => (token ? io(API_URL, { auth: { token }, transports: ['websocket', 'polling'], autoConnect: false }) : null),
+    // Default transports: HTTP long-polling first, then upgrade to WebSocket where the host allows it.
+    () => (token ? io(API_URL, { auth: { token }, autoConnect: false }) : null),
     [token],
   );
 

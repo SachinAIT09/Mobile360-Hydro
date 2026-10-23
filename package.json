@@ -21,7 +21,8 @@
     "e2e": "pnpm --filter @demo/e2e test",
     "e2e:legacy": "pnpm --filter @demo/e2e all",
     "build": "pnpm build:shared && pnpm --filter @demo/web build && pnpm --filter @demo/mobile build:web && pnpm --filter @demo/api build",
-    "start": "node apps/api/dist/main.js"
+    "start": "node apps/api/dist/main.js",
+    "deploy:catalyst": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/deploy-catalyst.ps1"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",

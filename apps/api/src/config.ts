@@ -17,12 +17,24 @@ for (const candidate of [resolve(here, '../../../.env'), resolve(process.cwd(), 
 
 const bool = (v: string | undefined, d: boolean) => (v === undefined || v === '' ? d : /^(1|true|yes)$/i.test(v));
 
+/**
+ * Listen port. Catalyst AppSail tells the app where to listen in X_ZOHO_CATALYST_LISTEN_PORT;
+ * otherwise API_PORT, then PORT, then 3000.
+ */
+export function resolvePort(env: Record<string, string | undefined>): number {
+  for (const key of ['X_ZOHO_CATALYST_LISTEN_PORT', 'API_PORT', 'PORT']) {
+    const n = Number(env[key]);
+    if (env[key] && Number.isInteger(n) && n > 0 && n < 65536) return n;
+  }
+  return 3000;
+}
+
 export const config = {
   /** Read lazily: database.ts may set MONGO_URL at startup (built-in database). */
   get mongoUrl(): string {
     return process.env.MONGO_URL || 'mongodb://127.0.0.1:27017/hydro_one_demo';
   },
-  port: Number(process.env.API_PORT || process.env.PORT || 3000),
+  port: resolvePort(process.env),
   jwtSecret: process.env.JWT_SECRET || 'demo-only-secret',
   demoFirstName: process.env.DEMO_CUSTOMER_FIRST_NAME || 'Manny',
   demoEnrolledFirstName: process.env.DEMO_ENROLLED_CUSTOMER_FIRST_NAME || 'Priya',

@@ -29,6 +29,13 @@ Read first: `docs/BUILD_SPEC.md` (scope, flows, screens), `docs/IMPLEMENTATION_N
 
 One server, one port: `docker compose up -d --build` (see DEPLOY.md), or `pnpm build && pnpm start`. Keep it that way. The point is that the demo needs no local setup.
 
+Zoho Catalyst AppSail (India DC) runs the same image: `pnpm deploy:catalyst` (`scripts/deploy-catalyst.ps1`; needs `catalyst login` + `catalyst init` once, and Docker Desktop). Hosting constraints the code relies on, don't undo them:
+- `apps/api/src/main.ts` opens the port before loading Nest, Express, Socket.IO or the database (AppSail kills apps not listening within 10 s); a 503 "Starting…" gate (`boot/gate.ts`) covers the ~3 s boot.
+- The port comes from `X_ZOHO_CATALYST_LISTEN_PORT`, then `API_PORT`, `PORT`, 3000 (`resolvePort` in `config.ts`).
+- The image ships the mongod binary (`MONGOMS_SYSTEM_BINARY`); nothing downloads at start.
+- Socket.IO clients use default transports (polling first, then WebSocket) and the server pings every 20 s, inside AppSail's 30 s request limit.
+- One instance only: live sync and the in-memory DB live in one process.
+
 ## Commands
 
 - `pnpm i`: install

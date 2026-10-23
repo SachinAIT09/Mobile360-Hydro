@@ -90,10 +90,8 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
   // realtime
   useEffect(() => {
     if (!token) return;
-    const socket: Socket<ServerToClientEvents, ClientToServerEvents> = io(API_URL, {
-      auth: { token },
-      transports: ['websocket', 'polling'],
-    });
+    // Default transports: HTTP long-polling first, then upgrade to WebSocket where the host allows it.
+    const socket: Socket<ServerToClientEvents, ClientToServerEvents> = io(API_URL, { auth: { token } });
     let hadConnection = false;
     socket.on('connect', () => {
       setStatus('connected');

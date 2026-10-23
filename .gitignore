@@ -16,3 +16,7 @@ tests/e2e/test-results/
 # Local snapshots and scratch
 .backup/
 .playwright-artifacts-*/
+
+# Catalyst deploy artefacts
+.catalyst-build/
+*.tar

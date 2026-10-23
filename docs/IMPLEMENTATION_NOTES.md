@@ -130,3 +130,11 @@ Stats: sent = targeted; delivered/opened/acted for real customers update on thei
 - Offline or blocked tiles (4 errors before any tile loads, or `navigator.onLine === false`) fall back to `components/SchematicMap.tsx` with a "Try the map again" link.
 - Every feeder now has a seeded baseline forecast of 45–82% of capacity (`seed/forecast.ts`, deterministic per feeder code), below the assistant's 85% risk threshold and the 90% DR alert; "Simulate forecast high" still raises SUB-01-F1 to 92%.
 - The production server caches `index.html` at start-up: after `pnpm build`, restart `pnpm start`.
+
+## Hosting on Zoho Catalyst AppSail
+
+- **Boot order** (`apps/api/src/main.ts`): the entry file imports only `node:http`, `config` and `boot/gate.ts`, opens the port (≈30 ms after Node starts), and serves 503 "Starting…" (HTML that refreshes every 2 s for browsers, JSON for `/api`, `/socket.io` and assets). Then it loads `reflect-metadata`, starts the database (`startDatabase()` in `database.ts`), imports Nest and `AppModule`, creates the app on an Express instance with `ExpressAdapter`, attaches Socket.IO to the already-listening server (`new IoAdapter(server)`), runs `app.init()` (seed and timers) and hands requests to Express. On a failed start the error page shows and the process exits after 5 s so the host restarts it.
+- **Port:** `resolvePort()` reads `X_ZOHO_CATALYST_LISTEN_PORT`, `API_PORT`, `PORT`, else 3000.
+- **Database in the image:** the Dockerfile downloads mongod 8.2.6 at build time and sets `MONGOMS_SYSTEM_BINARY=/opt/mongo/mongod`; the runtime image adds `libcurl4`. `startDatabase()` runs mongod with `--wiredTigerCacheSizeGB 0.25`. In a 1 GB container the database is ready in ~0.8 s and the app in ~3 s; memory use is ~220 MB.
+- **Transports:** clients use Socket.IO's default transports (long-polling, then WebSocket upgrade) instead of forcing WebSocket; the gateway pings every 20 s (`pingInterval`/`pingTimeout` 20000) so polls stay inside a 30 s request limit. Verified by refusing every WebSocket in the browser: the EV pop-up and staff live row still arrive.
+- **Deploy:** `scripts/deploy-catalyst.ps1` (`pnpm deploy:catalyst`) builds `linux/amd64`, saves a docker archive to `.catalyst-build/` (git-ignored) and runs `catalyst deploy appsail --name hydroonedemo --source docker-archive://… --port 3000`.

@@ -11,7 +11,8 @@ import { AuthTokens, type RequestUser } from '../auth/auth.js';
 import { RealtimeService } from './realtime.service.js';
 
 /** Socket.IO on the API's own port. Clients connect with io(API_URL, { auth: { token } }). */
-@WebSocketGateway({ cors: { origin: '*' } })
+// Ping well inside 30 s so HTTP long-poll requests finish within hosting request limits (Catalyst AppSail: 30 s).
+@WebSocketGateway({ cors: { origin: '*' }, pingInterval: 20000, pingTimeout: 20000 })
 export class RealtimeGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
   private readonly log = new Logger('Socket');
 

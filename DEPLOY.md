@@ -42,6 +42,58 @@ On Windows you can just double-click `start-demo.cmd`, which does the same. To u
 
 The first start downloads the MongoDB binary from fastdl.mongodb.org. If a corporate proxy blocks that, set `MONGO_URL` to a MongoDB you can reach (e.g. a free MongoDB Atlas cluster).
 
+## Option C: Zoho Catalyst AppSail
+
+Catalyst AppSail runs the same Docker image as a managed service with an HTTPS URL. The built-in in-memory database is used, so nothing else needs setting up.
+
+**What to expect on AppSail**
+- **Demo data resets when the service sleeps.** AppSail stops an instance after about 5 minutes without traffic, and the in-memory database goes with it. The next visit starts fresh: it shows "Starting the demo…" for a few seconds, then the app. Signed-in phones keep working because the demo accounts are recreated with the same IDs. To keep data across sleeps, set `MONGO_URL` to a MongoDB such as a free Atlas cluster.
+- **One instance only.** Live sync and the in-memory data live in one server process. AppSail adds instances only past 80 concurrent requests per instance, far above demo traffic. If you share the URL widely, ask Zoho support to cap the service at one instance.
+- **WebSockets are optional.** The apps connect over HTTP long-polling first and upgrade to WebSockets when the platform allows it, so live sync works either way. Each poll finishes well inside AppSail's 30-second request limit.
+- **Startup is fast enough.** The server opens its port in under a second; AppSail requires 10 s. The database and sample data load behind a "Starting…" page in about 3 s.
+- **The map needs internet access** to OpenStreetMap and Esri tiles from the viewer's browser. Without it, the diagram view shows instead.
+
+### One-time setup
+
+1. Install the Catalyst CLI and sign in. Your account is on the India data center (`catalyst.zoho.in`):
+   ```powershell
+   npm i -g zcatalyst-cli
+   catalyst login
+   ```
+2. In this folder, link it to a Catalyst project. Create one called "Hydro One EV Demo" if you don't have it:
+   ```powershell
+   catalyst init
+   ```
+   This writes `catalyst.json` and `.catalystrc`. They hold project IDs, not secrets, so commit them.
+3. Start Docker Desktop.
+
+### Deploy
+
+```powershell
+pnpm deploy:catalyst
+```
+
+This builds the image for `linux/amd64` (the platform AppSail requires), saves it to `.catalyst-build/hydro-one-demo.tar`, and runs `catalyst deploy appsail --name hydroonedemo --source docker-archive://... --port 3000`. To redeploy the last built image without rebuilding: `pnpm deploy:catalyst -SkipBuild`.
+
+### First-time console settings (Catalyst console > AppSail > hydroonedemo)
+
+| Setting | Value |
+|---|---|
+| Memory | 1024 MB (it uses about 220 MB; the headroom covers resets and the seed) |
+| Disk | 1024 MB (the image is about 0.8 GB) |
+| Environment variable `JWT_SECRET` | Any long random string |
+| Optional: `DEMO_TIMEZONE`, `EV_ALWAYS_CHARGING`, `DEMO_CUSTOMER_FIRST_NAME` | As in the settings table below |
+
+Then open the **development** URL (`https://hydroonedemo-<id>.development.catalystappsail.com`) and check `/`, `/staff` and `/app`. When it looks right, use **Deploy to production** in the console. You can map your own domain under the service's domain settings.
+
+### Check it from this PC
+
+```powershell
+$env:BASE_URL = "https://hydroonedemo-<id>.development.catalystappsail.com"; pnpm e2e
+```
+
+The browser tests reset the demo data, so don't run them while someone is presenting.
+
 ## HTTPS and domains
 
 Put the app behind your usual reverse proxy (nginx, Caddy, an AWS ALB) and forward everything to port 3000. **WebSockets must be allowed** (`/socket.io`), or the apps fall back to slower polling. Example nginx:
