@@ -34,6 +34,7 @@ Zoho Catalyst AppSail (India DC) runs the same image: `pnpm deploy:catalyst` (`s
 - The port comes from `X_ZOHO_CATALYST_LISTEN_PORT`, then `API_PORT`, `PORT`, 3000 (`resolvePort` in `config.ts`).
 - The image ships the mongod binary (`MONGOMS_SYSTEM_BINARY`); nothing downloads at start.
 - Socket.IO clients use default transports (polling first, then WebSocket) and the server pings every 20 s, inside AppSail's 30 s request limit.
+- AppSail doesn't pass WebSockets: on AppSail the server serves polling only (`socketPollingOnly` in `config.ts`). Its proxy also rejects `[` `]` in paths, so `apps/mobile/scripts/fix-export-names.mjs` renames Expo's bracketed route chunks after export.
 - One instance only: live sync and the in-memory DB live in one process.
 
 ## Commands

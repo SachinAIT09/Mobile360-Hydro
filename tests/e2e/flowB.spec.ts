@@ -13,7 +13,8 @@ test.describe('Flow B: enrollment offer to a feeder', () => {
     await sim.cluster(api);
 
     // The live row with the suggested action arrives over the socket.
-    const target = web.getByRole('link', { name: /target [\d,]+/i }).or(web.getByRole('button', { name: /target [\d,]+/i }));
+    // The live row's own action ("Target 118 with enrollment offer"), not a blind-spot "Target N" link already on the page.
+    const target = web.getByRole('link', { name: /target [\d,]+ with enrollment offer/i }).or(web.getByRole('button', { name: /target [\d,]+ with enrollment offer/i }));
     await expect(target.first()).toBeVisible({ timeout: 20_000 });
     await target.first().click();
     await expect(web).toHaveURL(/campaigns\/new/);

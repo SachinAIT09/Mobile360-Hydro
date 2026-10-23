@@ -1,0 +1,30 @@
+{
+  "defaults": {
+    "project": 1,
+    "env": 1
+  },
+  "actives": {
+    "project": 1,
+    "env": 1
+  },
+  "projects": [
+    {
+      "idx": 1,
+      "id": "88707000000013054",
+      "name": "Mobile360-Hydro",
+      "domain": {
+        "id": "50047125140",
+        "name": "mobile360-hydro-60092967877.development"
+      },
+      "timezone": "Asia/Kolkata",
+      "env": [
+        {
+          "idx": 1,
+          "id": "60092967877",
+          "name": "Development",
+          "type": 3
+        }
+      ]
+    }
+  ]
+}

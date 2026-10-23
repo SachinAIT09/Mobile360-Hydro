@@ -26,7 +26,7 @@ function Fail($msg) { Write-Host "`n$msg`n" -ForegroundColor Red; exit 1 }
 if (-not (Get-Command catalyst -ErrorAction SilentlyContinue)) {
   Fail "The Catalyst CLI isn't installed. Run: npm i -g zcatalyst-cli, then catalyst login and catalyst init."
 }
-if (-not (Test-Path (Join-Path $root 'catalyst.json'))) {
+if (-not (Test-Path (Join-Path $root '.catalystrc')) -and -not (Test-Path (Join-Path $root 'catalyst.json'))) {
   Fail "This folder isn't linked to a Catalyst project yet. Run: catalyst login, then catalyst init (pick or create the project)."
 }
 docker version --format '{{.Server.Version}}' *> $null

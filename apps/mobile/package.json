@@ -36,7 +36,7 @@
     "web": "expo start --web --port 8081",
     "typecheck": "tsc --noEmit",
     "lint": "eslint . --max-warnings 0",
-    "build:web": "expo export --platform web --output-dir dist"
+    "build:web": "expo export --platform web --output-dir dist && node scripts/fix-export-names.mjs dist"
   },
   "private": true
 }

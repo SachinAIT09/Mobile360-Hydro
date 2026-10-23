@@ -1,4 +1,6 @@
 import http, { type IncomingMessage, type ServerResponse } from 'node:http';
+import type { IoAdapter as IoAdapterType } from '@nestjs/platform-socket.io'; // type only: erased at build, no start-up cost
+type IoServerOptions = Parameters<IoAdapterType['createIOServer']>[1];
 import { config } from './config.js';
 import { STARTING_MESSAGE, gateKind, startingPage } from './boot/gate.js';
 
@@ -56,7 +58,14 @@ async function boot() {
     const app = await NestFactory.create<import('@nestjs/platform-express').NestExpressApplication>(AppModule, new ExpressAdapter(expressApp), {
       cors: { origin: true, credentials: true },
     });
-    app.useWebSocketAdapter(new IoAdapter(server)); // Socket.IO on the server that is already listening
+    // Socket.IO on the server that is already listening; polling-only where WebSockets don't get through.
+    class HostIoAdapter extends IoAdapter {
+      createIOServer(port: number, options?: IoServerOptions) {
+        return super.createIOServer(port, config.socketPollingOnly ? ({ ...(options ?? {}), transports: ['polling'] } as IoServerOptions) : options);
+      }
+    }
+    app.useWebSocketAdapter(new HostIoAdapter(server));
+    if (config.socketPollingOnly) new Logger('Socket').log('Live updates over HTTP long-polling only (WebSocket upgrade disabled)');
     app.setGlobalPrefix('api');
     app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true, forbidUnknownValues: false }));
     app.enableShutdownHooks();

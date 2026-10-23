@@ -49,7 +49,7 @@ Catalyst AppSail runs the same Docker image as a managed service with an HTTPS U
 **What to expect on AppSail**
 - **Demo data resets when the service sleeps.** AppSail stops an instance after about 5 minutes without traffic, and the in-memory database goes with it. The next visit starts fresh: it shows "Starting the demo…" for a few seconds, then the app. Signed-in phones keep working because the demo accounts are recreated with the same IDs. To keep data across sleeps, set `MONGO_URL` to a MongoDB such as a free Atlas cluster.
 - **One instance only.** Live sync and the in-memory data live in one server process. AppSail adds instances only past 80 concurrent requests per instance, far above demo traffic. If you share the URL widely, ask Zoho support to cap the service at one instance.
-- **WebSockets are optional.** The apps connect over HTTP long-polling first and upgrade to WebSockets when the platform allows it, so live sync works either way. Each poll finishes well inside AppSail's 30-second request limit.
+- **Live updates use HTTP long-polling.** AppSail doesn't pass WebSocket upgrades through (tested on the live service). When the server sees AppSail's port variable it stops offering the upgrade, so browsers don't log failed WebSocket attempts. Each poll finishes well inside AppSail's 30-second request limit. Elsewhere the apps still upgrade to WebSockets; `SOCKET_POLLING_ONLY=true|false` overrides.
 - **Startup is fast enough.** The server opens its port in under a second; AppSail requires 10 s. The database and sample data load behind a "Starting…" page in about 3 s.
 - **The map needs internet access** to OpenStreetMap and Esri tiles from the viewer's browser. Without it, the diagram view shows instead.
 
@@ -64,7 +64,7 @@ Catalyst AppSail runs the same Docker image as a managed service with an HTTPS U
    ```powershell
    catalyst init
    ```
-   This writes `catalyst.json` and `.catalystrc`. They hold project IDs, not secrets, so commit them.
+   This links the folder to the project in `.catalystrc` (project IDs, not secrets; it's committed). Init may stop before writing `catalyst.json`; the AppSail deploy doesn't need it.
 3. Start Docker Desktop.
 
 ### Deploy
@@ -85,6 +85,10 @@ This builds the image for `linux/amd64` (the platform AppSail requires), saves i
 | Optional: `DEMO_TIMEZONE`, `EV_ALWAYS_CHARGING`, `DEMO_CUSTOMER_FIRST_NAME` | As in the settings table below |
 
 Then open the **development** URL (`https://hydroonedemo-<id>.development.catalystappsail.com`) and check `/`, `/staff` and `/app`. When it looks right, use **Deploy to production** in the console. You can map your own domain under the service's domain settings.
+
+### Development URL
+
+`https://hydroonedemo-50047125140.development.catalystappsail.in` (project Mobile360-Hydro, India DC). On a cold start the "Starting the demo…" page answers in under a second and the app is ready in about 7 s.
 
 ### Check it from this PC
 
