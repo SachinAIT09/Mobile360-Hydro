@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Hydro One – Campaign 360 feeder campaign</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&amp;family=IBM+Plex+Mono:wght@500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#1557C0}a:hover{color:#0B3D91}
+.card{background:#FFFFFF;border:1px solid #DDE3EA;border-radius:14px}
+.lbl{font-size:12px;font-weight:600;color:#4A5768;letter-spacing:0.03em}
+.fld{height:42px;border:1px solid #C3CCD8;border-radius:10px;padding:0 12px;font-family:inherit;font-size:14px;background:#FFFFFF;color:#0F1B2D;box-sizing:border-box;width:100%}
+.chk{display:flex;align-items:center;gap:10px;font-size:14px;min-height:40px}
+.chk input{width:18px;height:18px}
+.mono{font-family:'IBM Plex Mono',monospace}
+.btn{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:0 18px;border-radius:10px;font-size:15px;font-weight:600;text-decoration:none;white-space:nowrap}
+</style>
+</helmet>
+<div style="min-height: 100vh; background: #F2F5F8; font-family: 'IBM Plex Sans', system-ui, sans-serif; color: #0F1B2D">
+  <header style="background: #0B2545; color: #FFFFFF">
+    <div style="max-width: 1400px; margin: 0 auto; padding: 12px 24px; display: flex; flex-wrap: wrap; align-items: center; gap: 12px 28px">
+      <div style="width: 120px; height: 36px; border: 1.5px dashed #8FA6C4; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 11px; color: #C9D6E8">[Hydro One logo]</div>
+      <span style="font-size: 15px; font-weight: 600">Grid Edge Insights</span>
+      <nav aria-label="Sections" style="display: flex; flex-wrap: wrap; gap: 4px; flex: 1">
+        <a href="FeederDashboard.dc.html" style="color: #C9D6E8; padding: 10px 14px; border-radius: 8px; font-size: 14px; text-decoration: none">Feeder visibility</a>
+        <a href="Campaign.dc.html" style="color: #FFFFFF; background: rgba(255,255,255,0.14); padding: 10px 14px; border-radius: 8px; font-size: 14px; text-decoration: none; font-weight: 600">Campaign 360</a>
+        <a href="#events" style="color: #C9D6E8; padding: 10px 14px; border-radius: 8px; font-size: 14px; text-decoration: none">DR events</a>
+        <a href="#reports" style="color: #C9D6E8; padding: 10px 14px; border-radius: 8px; font-size: 14px; text-decoration: none">Reports</a>
+      </nav>
+      <span style="font-size: 13px; color: #C9D6E8">[Staff name] · Customer Programs</span>
+    </div>
+  </header>
+  <main style="max-width: 1400px; margin: 0 auto; padding: 24px; display: flex; flex-direction: column; gap: 18px">
+    <div style="display: flex; flex-direction: column; gap: 6px">
+      <a href="FeederDashboard.dc.html" style="font-size: 14px">‹ Back to feeder visibility</a>
+      <h1 style="margin: 0; font-size: 26px; font-weight: 600">New feeder campaign</h1>
+      <p style="margin: 0; font-size: 14px; color: #4A5768">Audience built from Net2Grid EV detection on <span class="mono">SUB-01-F1</span>. Messages go to the Hydro One app and the channels you pick.</p>
+    </div>
+
+    <div role="tablist" aria-label="Campaign type" style="display: flex; flex-wrap: wrap; gap: 10px">
+      <sc-for list="{{types}}" as="t" hint-placeholder-count="2">
+        <button role="tab" onClick="{{t.pick}}" style="{{t.style}}">
+          <span style="font-size: 15px; font-weight: 600">{{t.label}}</span>
+          <span style="font-size: 13px; color: #4A5768">{{t.sub}}</span>
+        </button>
+      </sc-for>
+    </div>
+
+    <section style="display: flex; flex-wrap: wrap; gap: 18px; align-items: flex-start">
+      <div style="flex: 999 1 600px; min-width: 0; display: flex; flex-direction: column; gap: 14px">
+        <div class="card" style="padding: 18px; display: flex; flex-direction: column; gap: 12px">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px">
+            <h2 style="margin: 0; font-size: 16px; font-weight: 600">1 · Audience</h2>
+            <span style="font-size: 14px"><strong class="mono" style="font-size: 22px">{{c.count}}</strong> customers</span>
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px">
+            <label style="display: flex; flex-direction: column; gap: 6px"><span class="lbl">TRIGGER (NET2GRID)</span><select class="fld"><option>{{c.trigger}}</option></select></label>
+            <label style="display: flex; flex-direction: column; gap: 6px"><span class="lbl">FEEDER</span><select class="fld"><option>SUB-01-F1 (146 EVs)</option></select></label>
+            <label style="display: flex; flex-direction: column; gap: 6px"><span class="lbl">SEGMENT</span><select class="fld"><option>{{c.segment}}</option></select></label>
+          </div>
+          <div style="display: flex; flex-wrap: wrap; gap: 4px 20px">
+            <label class="chk"><input type="checkbox" checked>Exclude customers who opted out of messages</label>
+            <label class="chk"><input type="checkbox" checked>Exclude customers contacted in the last 7 days</label>
+            <label class="chk"><input type="checkbox" checked>Exclude life-support / medical-priority accounts</label>
+          </div>
+        </div>
+
+        <div class="card" style="padding: 18px; display: flex; flex-direction: column; gap: 12px">
+          <h2 style="margin: 0; font-size: 16px; font-weight: 600">2 · Message</h2>
+          <label style="display: flex; flex-direction: column; gap: 6px"><span class="lbl">TITLE</span><input class="fld" type="text" value="{{c.title}}"></label>
+          <label style="display: flex; flex-direction: column; gap: 6px"><span class="lbl">BODY</span><textarea class="fld" style="height: 96px; padding: 10px 12px; resize: vertical; line-height: 1.5" value="{{c.body}}"></textarea></label>
+          <div style="display: flex; flex-wrap: wrap; gap: 8px; font-size: 13px; color: #4A5768; align-items: center">Insert:
+            <span class="mono" style="background: #EEF1F5; border-radius: 6px; padding: 4px 8px">{first_name}</span>
+            <span class="mono" style="background: #EEF1F5; border-radius: 6px; padding: 4px 8px">{incentive}</span>
+            <span class="mono" style="background: #EEF1F5; border-radius: 6px; padding: 4px 8px">{event_window}</span>
+            <span class="mono" style="background: #EEF1F5; border-radius: 6px; padding: 4px 8px">{neighbours_enrolled}</span>
+          </div>
+          <label style="display: flex; flex-direction: column; gap: 6px; max-width: 320px"><span class="lbl">BUTTON</span><input class="fld" type="text" value="{{c.cta}}"></label>
+        </div>
+
+        <div style="display: flex; flex-wrap: wrap; gap: 14px">
+          <div class="card" style="flex: 1 1 280px; padding: 18px; display: flex; flex-direction: column; gap: 6px">
+            <h2 style="margin: 0 0 4px; font-size: 16px; font-weight: 600">3 · Channels</h2>
+            <label class="chk"><input type="checkbox" checked>App push notification</label>
+            <label class="chk"><input type="checkbox" checked>In-app message inbox</label>
+            <label class="chk"><input type="checkbox" checked="{{c.sms}}">SMS</label>
+            <label class="chk"><input type="checkbox">Email</label>
+          </div>
+          <div class="card" style="flex: 1 1 280px; padding: 18px; display: flex; flex-direction: column; gap: 10px">
+            <h2 style="margin: 0 0 4px; font-size: 16px; font-weight: 600">4 · Schedule</h2>
+            <label class="chk"><input type="radio" name="when" checked>{{c.when}}</label>
+            <label class="chk"><input type="radio" name="when">Schedule for later</label>
+            <label style="display: flex; flex-direction: column; gap: 6px"><span class="lbl">EXPIRES</span><select class="fld"><option>{{c.expires}}</option></select></label>
+          </div>
+        </div>
+
+        <div style="display: flex; flex-wrap: wrap; gap: 10px; justify-content: flex-end">
+          <a class="btn" href="#test" style="border: 1px solid #C3CCD8; color: #0F1B2D; background: #FFFFFF">Send test to me</a>
+          <a class="btn" href="{{c.preview}}" style="background: #1557C0; color: #FFFFFF">Send to {{c.count}} customers</a>
+        </div>
+      </div>
+
+      <div style="flex: 1 1 320px; min-width: 0; display: flex; flex-direction: column; gap: 14px">
+        <div class="card" style="padding: 18px; display: flex; flex-direction: column; gap: 12px; align-items: center">
+          <span class="lbl" style="align-self: flex-start">PREVIEW ON PHONE</span>
+          <div style="width: 260px; border-radius: 30px; border: 8px solid #0F1B2D; background: #2B3645; padding: 16px 10px 120px; box-sizing: border-box">
+            <div style="background: rgba(255,255,255,0.96); border-radius: 14px; padding: 10px 12px; display: flex; flex-direction: column; gap: 3px; font-size: 12px; line-height: 1.35">
+              <span style="display: flex; justify-content: space-between; color: #4A5768; font-size: 11px"><span>HYDRO ONE</span><span>now</span></span>
+              <strong>{{c.title}}</strong>
+              <span>{{c.push}}</span>
+            </div>
+          </div>
+          <a href="{{c.preview}}" style="font-size: 14px">Open in-app screen ›</a>
+        </div>
+        <div class="card" style="padding: 18px; display: flex; flex-direction: column; gap: 10px">
+          <div style="display: flex; justify-content: space-between; align-items: baseline"><span class="lbl">LAST CAMPAIGN ON THIS FEEDER</span><span style="font-size: 12px; color: #4A5768">Sample</span></div>
+          <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px">
+            <sc-for list="{{c.results}}" as="r" hint-placeholder-count="4">
+              <div style="background: #F2F5F8; border-radius: 10px; padding: 10px 12px; display: flex; flex-direction: column; gap: 2px"><strong class="mono" style="font-size: 20px">{{r.v}}</strong><span style="font-size: 12px; color: #4A5768">{{r.l}}</span></div>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1360}}'>
+class Component extends DCLogic {
+  constructor(p) { super(p); this.state = { type: 'enroll' }; }
+  renderVals() {
+    const C = {
+      enroll: {
+        count: 77, trigger: 'EV detected / stopped charging', segment: 'Detected, unenrolled EVs',
+        title: 'EV owners near you are saving with [DR Program Name]',
+        body: 'Hi {first_name}, {neighbours_enrolled} EV owners in your area have already joined [DR Program Name]. Join today and get {incentive}. You can opt out of any event.',
+        push: 'Join and get [Incentive]. Takes 1 minute.',
+        cta: 'Enroll in 1 minute', sms: false, when: 'Send now', expires: '14 days', preview: 'Offer.dc.html',
+        results: [{ v: '118', l: 'Sent' }, { v: '116', l: 'Delivered' }, { v: '74', l: 'Opened' }, { v: '21', l: 'Enrolled' }]
+      },
+      stop: {
+        count: 69, trigger: 'Feeder load forecast above 90%', segment: 'Enrolled EVs (DR program)',
+        title: 'Please pause EV charging 5–8 PM today',
+        body: 'Hi {first_name}, demand on your local line is close to its limit this evening. Please pause EV charging during {event_window} and earn [$X]. Can’t take part? Opt out in the app.',
+        push: 'High demand on your local line. Earn [$X] for taking part.',
+        cta: 'Respond', sms: true, when: 'Send now (event starts 5:00 PM)', expires: 'At event end, 8:00 PM', preview: 'StopCharging.dc.html',
+        results: [{ v: '64', l: 'Delivered' }, { v: '58', l: 'Responded' }, { v: '52', l: 'Paused charging' }, { v: '0.37 MW', l: 'Peak reduced' }]
+      }
+    };
+    const base = 'display: flex; flex-direction: column; gap: 2px; text-align: left; padding: 12px 16px; border-radius: 12px; font-family: inherit; color: #0F1B2D; cursor: pointer; min-width: 260px;';
+    const types = [
+      { id: 'enroll', label: 'Enrollment offer', sub: 'Target unenrolled EVs on this feeder' },
+      { id: 'stop', label: 'Stop-charging request', sub: 'DR event for enrolled EVs on this feeder' }
+    ].map((t) => ({
+      ...t,
+      pick: () => this.setState({ type: t.id }),
+      style: base + (this.state.type === t.id ? ' border: 2px solid #1557C0; background: #EEF3FC;' : ' border: 1px solid #C3CCD8; background: #FFFFFF;')
+    }));
+    return { types, c: C[this.state.type] };
+  }
+}
+</script>
+</body>
+</html>

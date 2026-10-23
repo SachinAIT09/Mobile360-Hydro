@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Hydro One app – View bill</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#1557C0}a:hover{color:#0B3D91}
+.nav{display:flex;justify-content:space-around;align-items:center;height:76px;background:#FFFFFF;border-top:1px solid #DDE3EA;flex-shrink:0}
+.ni{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:11px;color:#4A5768;text-decoration:none;min-width:56px;min-height:44px;justify-content:center}
+.ni.on{color:#1557C0;font-weight:600}
+.row{display:flex;justify-content:space-between;font-size:14px;padding:10px 0;border-bottom:1px solid #EEF1F5}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #F2F5F8; font-family: 'IBM Plex Sans', system-ui, sans-serif; color: #0F1B2D; display: flex; flex-direction: column; overflow: hidden">
+  <header style="background: #FFFFFF; padding: 16px 12px; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid #DDE3EA">
+    <a href="Home.dc.html" aria-label="Back" style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; color: #0F1B2D"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></a>
+    <h1 style="margin: 0; font-size: 18px; font-weight: 600; flex: 1">Your bill</h1>
+    <a href="#pdf" style="font-size: 14px; padding: 12px 8px">PDF</a>
+  </header>
+  <main style="flex: 1; overflow: hidden; padding: 16px; display: flex; flex-direction: column; gap: 12px">
+    <section style="background: #FFFFFF; border-radius: 16px; padding: 18px; display: flex; flex-direction: column; gap: 10px">
+      <div style="display: flex; justify-content: space-between; align-items: center">
+        <span style="font-size: 13px; color: #4A5768">[Sep 15 – Oct 14, 2026] · 30 days</span>
+        <span style="font-size: 12px; font-weight: 600; color: #8A4B00; background: #FFF1D6; padding: 3px 8px; border-radius: 10px">Unpaid</span>
+      </div>
+      <div style="font-size: 34px; font-weight: 700">$[184.27]</div>
+      <div style="font-size: 13px; color: #4A5768">Due [Nov 8, 2026] · [1,142] kWh used</div>
+      <a href="Pay.dc.html" style="height: 48px; border-radius: 12px; background: #1557C0; color: #FFFFFF; font-size: 16px; font-weight: 600; display: flex; align-items: center; justify-content: center; text-decoration: none; margin-top: 4px">Pay $[184.27]</a>
+    </section>
+    <section style="background: #FFFFFF; border-radius: 16px; padding: 6px 18px 10px">
+      <div class="row"><span>Electricity</span><span>$[92.40]</span></div>
+      <div class="row"><span>Delivery</span><span>$[61.15]</span></div>
+      <div class="row"><span>Regulatory</span><span>$[9.52]</span></div>
+      <div class="row"><span>HST</span><span>$[21.20]</span></div>
+      <div class="row" style="border-bottom: none; font-weight: 700"><span>Total</span><span>$[184.27]</span></div>
+    </section>
+    <section style="background: #FFFFFF; border-radius: 16px; padding: 16px 18px; display: flex; flex-direction: column; gap: 12px">
+      <div style="display: flex; justify-content: space-between; align-items: baseline">
+        <h2 style="margin: 0; font-size: 15px; font-weight: 600">Usage, last 6 months</h2>
+        <span style="font-size: 12px; color: #4A5768">kWh</span>
+      </div>
+      <div style="display: flex; align-items: flex-end; gap: 12px; height: 96px; border-bottom: 1px solid #C3CCD8">
+        <div style="flex: 1; height: 52%; background: #C9D6E8; border-radius: 4px 4px 0 0"></div>
+        <div style="flex: 1; height: 60%; background: #C9D6E8; border-radius: 4px 4px 0 0"></div>
+        <div style="flex: 1; height: 72%; background: #C9D6E8; border-radius: 4px 4px 0 0"></div>
+        <div style="flex: 1; height: 68%; background: #C9D6E8; border-radius: 4px 4px 0 0"></div>
+        <div style="flex: 1; height: 81%; background: #C9D6E8; border-radius: 4px 4px 0 0"></div>
+        <div style="flex: 1; height: 96%; background: #1557C0; border-radius: 4px 4px 0 0"></div>
+      </div>
+      <div style="display: flex; gap: 12px; font-size: 11px; color: #4A5768; text-align: center">
+        <span style="flex: 1">May</span><span style="flex: 1">Jun</span><span style="flex: 1">Jul</span><span style="flex: 1">Aug</span><span style="flex: 1">Sep</span><span style="flex: 1; color: #0F1B2D; font-weight: 600">Oct</span>
+      </div>
+      <div style="font-size: 13px; color: #3B2E8F; background: #EEEAFB; border-radius: 10px; padding: 10px 12px">EV charging was about [38%] of this bill. <a href="Program.dc.html">Save with [DR Program Name]</a></div>
+    </section>
+    <div style="display: flex; gap: 10px">
+      <a href="#autopay" style="flex: 1; height: 44px; border-radius: 10px; border: 1px solid #C3CCD8; display: flex; align-items: center; justify-content: center; font-size: 14px; text-decoration: none; color: #0F1B2D">Set up AutoPay</a>
+      <a href="#history" style="flex: 1; height: 44px; border-radius: 10px; border: 1px solid #C3CCD8; display: flex; align-items: center; justify-content: center; font-size: 14px; text-decoration: none; color: #0F1B2D">Bill history</a>
+    </div>
+  </main>
+  <nav class="nav" aria-label="Main">
+    <a class="ni" href="Home.dc.html"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg>Home</a>
+    <a class="ni" href="Energy.dc.html"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg>Energy</a>
+    <a class="ni on" href="Bill.dc.html"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M6 2h9l5 5v15H6z"/><path d="M14 2v6h6"/><path d="M9 13h8M9 17h6"/></svg>Billing</a>
+    <a class="ni" href="Outage.dc.html"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l10 18H2z"/><path d="M12 10v5M12 18v.5"/></svg>Outage</a>
+    <a class="ni" href="Inbox.dc.html"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4z"/><path d="M10 20a2 2 0 0 0 4 0"/></svg>Messages</a>
+  </nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

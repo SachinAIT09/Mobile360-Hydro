@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Hydro One app – Enrollment offer</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#1557C0}a:hover{color:#0B3D91}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #F2F5F8; font-family: 'IBM Plex Sans', system-ui, sans-serif; color: #0F1B2D; display: flex; flex-direction: column; overflow: hidden">
+  <header style="background: #FFFFFF; padding: 16px 12px; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid #DDE3EA">
+    <a href="Inbox.dc.html" aria-label="Back to messages" style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; color: #0F1B2D"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></a>
+    <h1 style="margin: 0; font-size: 18px; font-weight: 600; flex: 1">Message</h1>
+  </header>
+  <main style="flex: 1; overflow: hidden; padding: 16px; display: flex; flex-direction: column; gap: 14px">
+    <div style="height: 168px; border-radius: 18px; background: #2A1F66; color: #FFFFFF; padding: 20px; display: flex; flex-direction: column; justify-content: flex-end; gap: 6px; position: relative; overflow: hidden">
+      <span aria-hidden="true" style="position: absolute; right: -30px; top: -30px; width: 160px; height: 160px; border-radius: 80px; border: 26px solid rgba(207,198,242,0.18)"></span>
+      <span style="font-size: 12px; letter-spacing: 0.06em; color: #CFC6F2">RECOMMENDED FOR YOU</span>
+      <span style="font-size: 22px; font-weight: 600; line-height: 1.25">Your neighbours are charging smarter</span>
+    </div>
+    <section style="background: #FFFFFF; border-radius: 16px; padding: 18px; display: flex; flex-direction: column; gap: 12px; font-size: 15px; line-height: 1.55; color: #2B3645">
+      <p style="margin: 0">Hi [First name],</p>
+      <p style="margin: 0">We've seen EV charging at your home in the evenings, when demand on your local line is highest. <strong>[214]</strong> EV owners in your area have already joined [DR Program Name].</p>
+      <p style="margin: 0">Join today and get <strong>[Incentive]</strong>, plus <strong>[$X]</strong> for every event you take part in. You can opt out of any event.</p>
+    </section>
+    <section style="background: #FFFFFF; border-radius: 16px; padding: 14px 18px; display: flex; justify-content: space-between; font-size: 13px; color: #4A5768">
+      <span>Your evening EV charging</span><strong style="color: #0F1B2D">~[18] kWh / day</strong>
+    </section>
+    <div style="margin-top: auto; display: flex; flex-direction: column; gap: 10px">
+      <a href="Program.dc.html" style="height: 52px; border-radius: 12px; background: #5B4BC4; color: #FFFFFF; font-size: 16px; font-weight: 600; display: flex; align-items: center; justify-content: center; text-decoration: none">Enroll in 1 minute</a>
+      <a href="Inbox.dc.html" style="height: 48px; border-radius: 12px; border: 1px solid #C3CCD8; color: #0F1B2D; font-size: 15px; display: flex; align-items: center; justify-content: center; text-decoration: none">Not interested</a>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

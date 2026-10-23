@@ -1,0 +1,37 @@
+{
+  "name": "hydro-one-ev-demo",
+  "private": true,
+  "version": "1.0.0",
+  "description": "PowerConnect.AI concept demo for Hydro One: customer mobile app + staff web app, interlinked through one API.",
+  "packageManager": "pnpm@10.28.0",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build:shared": "pnpm --filter @demo/shared build",
+    "dev": "pnpm build:shared && concurrently -k -n api,web,mobile -c blue,green,magenta \"pnpm --filter @demo/api dev\" \"pnpm --filter @demo/web dev\" \"pnpm --filter @demo/mobile web\"",
+    "dev:api": "pnpm build:shared && pnpm --filter @demo/api dev",
+    "dev:web": "pnpm --filter @demo/web dev",
+    "dev:mobile": "pnpm --filter @demo/mobile start",
+    "seed": "pnpm build:shared && pnpm --filter @demo/api seed",
+    "seed:reset": "pnpm build:shared && pnpm --filter @demo/api seed:reset",
+    "typecheck": "pnpm build:shared && pnpm -r --filter=!@demo/shared typecheck",
+    "lint": "pnpm -r lint",
+    "test": "pnpm -r --if-present --filter=!@demo/e2e test",
+    "e2e": "pnpm --filter @demo/e2e test",
+    "e2e:legacy": "pnpm --filter @demo/e2e all",
+    "build": "pnpm build:shared && pnpm --filter @demo/web build && pnpm --filter @demo/mobile build:web && pnpm --filter @demo/api build",
+    "start": "node apps/api/dist/main.js"
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "concurrently": "^10.0.6",
+    "eslint": "10.13.0",
+    "eslint-plugin-react-hooks": "7.1.1",
+    "eslint-plugin-react-refresh": "0.5.7",
+    "globals": "^17.13.0",
+    "typescript": "~6.0.3",
+    "typescript-eslint": "8.72.0",
+    "vitest": "5.0.5"
+  }
+}

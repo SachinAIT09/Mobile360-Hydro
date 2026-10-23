@@ -1,0 +1,10 @@
+packages:
+  - "apps/*"
+  - "packages/*"
+  - "tests/*"
+
+# Expo + pnpm monorepos need a flat node_modules.
+nodeLinker: hoisted
+
+onlyBuiltDependencies:
+  - esbuild

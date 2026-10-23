@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Hydro One app – Stop-charging request</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#1557C0}a:hover{color:#0B3D91}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #F2F5F8; font-family: 'IBM Plex Sans', system-ui, sans-serif; color: #0F1B2D; display: flex; flex-direction: column; overflow: hidden">
+  <header style="background: #7A3E00; color: #FFFFFF; padding: 14px 12px 24px; display: flex; flex-direction: column; gap: 10px">
+    <a href="Inbox.dc.html" aria-label="Back to messages" style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; color: #FFFFFF"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></a>
+    <div style="padding: 0 10px; display: flex; flex-direction: column; gap: 6px">
+      <span style="font-size: 12px; letter-spacing: 0.06em; color: #FFD9A8">GRID ALERT · YOUR LOCAL LINE</span>
+      <h1 style="margin: 0; font-size: 24px; line-height: 1.25; font-weight: 600">Please pause EV charging from 5 to 8 PM today</h1>
+    </div>
+  </header>
+  <main style="flex: 1; overflow: hidden; padding: 14px 16px; display: flex; flex-direction: column; gap: 12px">
+    <section style="background: #FFFFFF; border-radius: 16px; padding: 16px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; text-align: center">
+      <div style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 12px; color: #4A5768">Starts in</span><strong style="font-size: 20px">47 min</strong></div>
+      <div style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 12px; color: #4A5768">Duration</span><strong style="font-size: 20px">3 h</strong></div>
+      <div style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 12px; color: #4A5768">You earn</span><strong style="font-size: 20px">[$X]</strong></div>
+    </section>
+    <section style="background: #FFFFFF; border-radius: 16px; padding: 14px 16px; display: flex; align-items: center; gap: 12px">
+      <span style="width: 40px; height: 40px; border-radius: 20px; background: #EEEAFB; color: #5B4BC4; display: flex; align-items: center; justify-content: center; flex-shrink: 0"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 16l1.5-5a2 2 0 0 1 2-1.5h7a2 2 0 0 1 2 1.5L19 16"/><path d="M4 16h16v3H4z"/></svg></span>
+      <span style="display: flex; flex-direction: column; gap: 2px; font-size: 14px"><strong>Your EV is charging now · 7.2 kW</strong><span style="color: #4A5768; font-size: 13px">Pausing until 8 PM still leaves overnight to finish.</span></span>
+    </section>
+    <p style="margin: 0; font-size: 14px; line-height: 1.5; color: #2B3645">Demand on your neighbourhood's line is close to its limit this evening. Pausing helps keep power reliable for everyone nearby.</p>
+    <fieldset style="border: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px">
+      <legend style="font-size: 15px; font-weight: 600; margin-bottom: 8px">Will you take part?</legend>
+      <sc-for list="{{opts}}" as="o" hint-placeholder-count="3">
+        <button onClick="{{o.pick}}" style="{{o.style}}"><span style="{{o.radio}}"></span>{{o.label}}</button>
+      </sc-for>
+    </fieldset>
+    <sc-if value="{{picked}}" hint-placeholder-val="{{ false }}">
+      <div style="font-size: 13px; color: #1E6B3A; background: #E3F4E9; border-radius: 10px; padding: 10px 12px">{{confirm}}</div>
+    </sc-if>
+    <a href="EventSummary.dc.html" style="margin-top: auto; height: 52px; border-radius: 12px; background: #1557C0; color: #FFFFFF; font-size: 16px; font-weight: 600; display: flex; align-items: center; justify-content: center; text-decoration: none; flex-shrink: 0">Confirm</a>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(p) { super(p); this.state = { pick: 'pause' }; }
+  renderVals() {
+    const list = [
+      { id: 'pause', label: "Yes, I'll pause charging 5–8 PM", msg: "Thanks! We'll remind you at 4:55 PM and credit [$X] after the event." },
+      { id: 'remind', label: 'Remind me at 4:55 PM', msg: "We'll send a reminder 5 minutes before the event starts." },
+      { id: 'out', label: "I can't take part today", msg: "No problem. You've opted out of today's event only." }
+    ];
+    const opts = list.map((o) => {
+      const on = this.state.pick === o.id;
+      return {
+        ...o,
+        pick: () => this.setState({ pick: o.id }),
+        style: 'display: flex; align-items: center; gap: 12px; min-height: 50px; padding: 0 14px; border-radius: 12px; font-family: inherit; font-size: 15px; text-align: left; cursor: pointer; color: #0F1B2D; ' + (on ? 'border: 2px solid #1557C0; background: #F5F8FE;' : 'border: 1px solid #C3CCD8; background: #FFFFFF;'),
+        radio: 'width: 18px; height: 18px; border-radius: 9px; flex-shrink: 0; box-sizing: border-box; ' + (on ? 'border: 6px solid #1557C0;' : 'border: 2px solid #8A96A6;')
+      };
+    });
+    const cur = list.find((o) => o.id === this.state.pick);
+    return { opts, picked: !!cur, confirm: cur ? cur.msg : '' };
+  }
+}
+</script>
+</body>
+</html>

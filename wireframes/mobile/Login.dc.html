@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Hydro One app – Sign in</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#1557C0}a:hover{color:#0B3D91}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #0B2545; font-family: 'IBM Plex Sans', system-ui, sans-serif; color: #0F1B2D; display: flex; flex-direction: column; overflow: hidden">
+  <div style="padding: 72px 28px 36px; display: flex; flex-direction: column; gap: 20px; color: #FFFFFF">
+    <div style="width: 148px; height: 48px; border: 1.5px dashed #8FA6C4; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 13px; color: #C9D6E8">[Hydro One logo]</div>
+    <h1 style="margin: 0; font-size: 30px; line-height: 1.2; font-weight: 600">Your energy,<br>in your pocket.</h1>
+    <p style="margin: 0; font-size: 15px; line-height: 1.5; color: #C9D6E8">Bills, outages and real-time usage in one place.</p>
+  </div>
+  <div style="flex: 1; background: #FFFFFF; border-radius: 24px 24px 0 0; padding: 28px 24px 24px; display: flex; flex-direction: column; gap: 16px">
+    <h2 style="margin: 0; font-size: 20px; font-weight: 600">Sign in to My Account</h2>
+    <div style="display: flex; flex-direction: column; gap: 6px">
+      <label for="em" style="font-size: 13px; font-weight: 500; color: #4A5768">Email or account number</label>
+      <input id="em" type="text" placeholder="name@example.com" style="height: 48px; border: 1px solid #C3CCD8; border-radius: 10px; padding: 0 14px; font-size: 15px; font-family: inherit">
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 6px">
+      <label for="pw" style="font-size: 13px; font-weight: 500; color: #4A5768">Password</label>
+      <input id="pw" type="password" placeholder="••••••••" style="height: 48px; border: 1px solid #C3CCD8; border-radius: 10px; padding: 0 14px; font-size: 15px; font-family: inherit">
+    </div>
+    <a href="#forgot" style="font-size: 14px; align-self: flex-end">Forgot password?</a>
+    <a href="Home.dc.html" style="height: 52px; border-radius: 12px; background: #1557C0; color: #FFFFFF; font-size: 16px; font-weight: 600; display: flex; align-items: center; justify-content: center; text-decoration: none">Sign in</a>
+    <a href="Home.dc.html" style="height: 52px; border-radius: 12px; border: 1px solid #C3CCD8; color: #0F1B2D; font-size: 15px; font-weight: 500; display: flex; align-items: center; justify-content: center; gap: 10px; text-decoration: none">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M7 4.5A9 9 0 0 1 21 12M3 12a9 9 0 0 1 1.5-5M12 7a5 5 0 0 1 5 5v2M7 12a5 5 0 0 1 2-4M12 11v4a6 6 0 0 1-1 3.5M8 15a9 9 0 0 1-.5 3M16 17a12 12 0 0 1-1 3"/></svg>
+      Sign in with Face ID / fingerprint
+    </a>
+    <div style="height: 1px; background: #E3E8EE; margin: 4px 0"></div>
+    <a href="Outage.dc.html" style="display: flex; align-items: center; gap: 12px; padding: 14px; border-radius: 12px; background: #FFF4E0; color: #5C3B00; text-decoration: none; font-size: 14px; font-weight: 500">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l10 18H2z"/><path d="M12 10v5M12 18v.5"/></svg>
+      Power out? Report an outage without signing in
+    </a>
+    <p style="margin: auto 0 0; font-size: 14px; text-align: center; color: #4A5768">New to the app? <a href="#register">Register your account</a></p>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

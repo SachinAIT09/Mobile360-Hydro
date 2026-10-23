@@ -1,0 +1,59 @@
+/*
+ * Styles for the components added with the Reports page, the schematic map and presenter mode.
+ * Kept separate from styles.css so the Figma restyle can fold them in; only tokens from :root are used.
+ */
+
+/* ---------- reports ---------- */
+.two { display: grid; grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); gap: 18px; align-items: start; }
+.chart { width: 100%; height: 240px; }
+.chart.tall { height: 300px; }
+.chart svg:focus { outline: none; }
+.foot { font-size: 12px; color: var(--muted); }
+.card-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.chart-tip { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 8px 12px; font-size: 13px; color: var(--text-body); box-shadow: var(--shadow-card); }
+.chart-tip strong { color: var(--navy); }
+
+/* ---------- schematic map ---------- */
+.mapview { display: flex; flex-direction: column; gap: 10px; }
+.mapview svg { width: 100%; height: auto; display: block; border-radius: 16px; background: var(--surface-tint); }
+.mapview .node { cursor: pointer; }
+.mapview .node:focus { outline: none; }
+.mapview .node:focus-visible .focus-ring { stroke: var(--accent); stroke-width: 3; }
+.mapview .node:hover .label { font-weight: 700; }
+.mapview text { font-family: var(--mono); font-size: 11px; fill: var(--text-body); }
+.mapview .cap { font-family: var(--font); font-size: 11px; fill: var(--muted); }
+.mapview .badge { font-family: var(--font); font-size: 10px; font-weight: 700; fill: #2B1A00; }
+
+/* ---------- guided script ---------- */
+.script { display: flex; flex-direction: column; gap: 6px; }
+.script .phase { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin: 10px 0 2px; }
+.script .phase:first-child { margin-top: 0; }
+.script .stepbtn { display: flex; gap: 10px; align-items: center; width: 100%; text-align: left; border: none; background: transparent; padding: 8px 10px; border-radius: 12px; cursor: pointer; font-size: 14px; color: var(--text-body); min-height: 44px; }
+.script .stepbtn:hover { background: var(--surface-tint); }
+.script .stepbtn.cur { background: var(--primary-soft); color: var(--navy); font-weight: 600; }
+.script .stepbtn.done { color: var(--muted); }
+.script .stepbtn .n { width: 24px; height: 24px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; background: var(--divider); color: var(--muted); flex-shrink: 0; }
+.script .stepbtn.cur .n { background: var(--grad-primary); color: #fff; }
+.script .stepbtn.done .n { background: var(--success-bg); color: var(--success-text); }
+.script .detail { display: flex; flex-direction: column; gap: 10px; padding: 12px 14px 14px 44px; border-left: 2px solid var(--primary-tint); margin: 0 0 6px 11px; }
+.script .talk { font-size: 15px; line-height: 1.5; color: var(--navy); }
+.script .expect { display: grid; grid-template-columns: 72px 1fr; gap: 4px 10px; font-size: 13px; color: var(--text-body); }
+.script .expect dt { color: var(--muted); font-weight: 600; }
+.script .expect dd { margin: 0; }
+
+/* ---------- presenter bar ---------- */
+.presenter { position: fixed; left: 0; right: 0; bottom: 0; z-index: 50; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 10px 18px; background: var(--navy-deep); color: #fff; box-shadow: 0 -8px 24px rgba(8, 33, 72, 0.25); font-size: 14px; }
+.presenter .step { display: flex; flex-direction: column; gap: 1px; flex: 1 1 260px; min-width: 0; }
+.presenter .step .lbl { color: var(--header-muted); }
+.presenter .step .title { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.presenter .status { font-size: 12px; color: var(--header-muted); flex: 1 1 200px; min-width: 0; }
+.presenter .status.err { color: #FFB4B4; }
+.presenter .status a { color: var(--accent); }
+.presenter .btn.ghost { background: rgba(255, 255, 255, 0.1); color: #fff; }
+.presenter .btn.ghost:hover { background: rgba(255, 255, 255, 0.18); color: #fff; }
+.presenter kbd { font-family: var(--mono); font-size: 11px; border: 1px solid rgba(255, 255, 255, 0.35); border-radius: 5px; padding: 1px 5px; margin-left: 6px; color: var(--header-muted); }
+.presenter .keys { font-size: 11px; color: var(--header-muted); display: flex; gap: 10px; flex-wrap: wrap; }
+.has-presenter { padding-bottom: 84px; }
+@media (min-width: 901px) { .presenter { left: var(--sidebar-w); } }
+.qr { width: 180px; height: 180px; background: #fff; border-radius: 12px; padding: 8px; border: 1px solid var(--border); }
+.qr svg { width: 100%; height: 100%; display: block; }

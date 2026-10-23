@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Hydro One app – Event result</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#1557C0}a:hover{color:#0B3D91}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #F2F5F8; font-family: 'IBM Plex Sans', system-ui, sans-serif; color: #0F1B2D; display: flex; flex-direction: column; overflow: hidden">
+  <header style="background: #FFFFFF; padding: 16px 12px; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid #DDE3EA">
+    <a href="Inbox.dc.html" aria-label="Back to messages" style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; color: #0F1B2D"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></a>
+    <h1 style="margin: 0; font-size: 18px; font-weight: 600; flex: 1">Grid event · Oct 21</h1>
+  </header>
+  <main style="flex: 1; overflow: hidden; padding: 16px; display: flex; flex-direction: column; gap: 12px">
+    <section style="background: #0B2545; color: #FFFFFF; border-radius: 18px; padding: 22px; display: flex; flex-direction: column; gap: 8px">
+      <span style="font-size: 13px; color: #C9D6E8">Thanks for helping your local grid</span>
+      <span style="font-size: 36px; font-weight: 700">[$X] earned</span>
+      <span style="font-size: 14px; color: #C9D6E8">Credited to your next bill</span>
+    </section>
+    <section style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px">
+      <div style="background: #FFFFFF; border-radius: 14px; padding: 14px; display: flex; flex-direction: column; gap: 4px"><span style="font-size: 12px; color: #4A5768">Energy shifted</span><strong style="font-size: 22px">19.8 kWh</strong></div>
+      <div style="background: #FFFFFF; border-radius: 14px; padding: 14px; display: flex; flex-direction: column; gap: 4px"><span style="font-size: 12px; color: #4A5768">Peak reduced</span><strong style="font-size: 22px">7.2 kW</strong></div>
+    </section>
+    <section style="background: #FFFFFF; border-radius: 16px; padding: 16px; display: flex; flex-direction: column; gap: 10px">
+      <h2 style="margin: 0; font-size: 15px; font-weight: 600">Your home during the event</h2>
+      <div style="display: flex; align-items: flex-end; gap: 4px; height: 110px; border-bottom: 1px solid #C3CCD8; position: relative">
+        <span aria-hidden="true" style="position: absolute; left: 34%; width: 38%; top: 0; bottom: 0; background: #FFF1D6"></span>
+        <div style="flex: 1; height: 80%; background: #8A96A6; position: relative"></div>
+        <div style="flex: 1; height: 86%; background: #8A96A6; position: relative"></div>
+        <div style="flex: 1; height: 84%; background: #8A96A6; position: relative"></div>
+        <div style="flex: 1; height: 82%; background: #8A96A6; position: relative"></div>
+        <div style="flex: 1; height: 22%; background: #1557C0; position: relative"></div>
+        <div style="flex: 1; height: 18%; background: #1557C0; position: relative"></div>
+        <div style="flex: 1; height: 20%; background: #1557C0; position: relative"></div>
+        <div style="flex: 1; height: 24%; background: #1557C0; position: relative"></div>
+        <div style="flex: 1; height: 88%; background: #8A96A6; position: relative"></div>
+        <div style="flex: 1; height: 84%; background: #8A96A6; position: relative"></div>
+        <div style="flex: 1; height: 70%; background: #8A96A6; position: relative"></div>
+      </div>
+      <div style="display: flex; justify-content: space-between; font-size: 11px; color: #4A5768"><span>3 PM</span><span>5 PM</span><span>8 PM</span><span>10 PM</span></div>
+    </section>
+    <section style="background: #FFFFFF; border-radius: 16px; padding: 16px; display: flex; flex-direction: column; gap: 6px">
+      <h2 style="margin: 0; font-size: 15px; font-weight: 600">Your neighbourhood</h2>
+      <p style="margin: 0; font-size: 14px; line-height: 1.5; color: #2B3645"><strong>[214]</strong> homes on your line paused charging and cut the evening peak by <strong>[1.2] MW</strong>.</p>
+    </section>
+    <a href="Home.dc.html" style="margin-top: auto; height: 52px; border-radius: 12px; background: #1557C0; color: #FFFFFF; font-size: 16px; font-weight: 600; display: flex; align-items: center; justify-content: center; text-decoration: none; flex-shrink: 0">Done</a>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

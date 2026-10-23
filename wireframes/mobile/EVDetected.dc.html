@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Hydro One app – EV detected</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#1557C0}a:hover{color:#0B3D91}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #F2F5F8; font-family: 'IBM Plex Sans', system-ui, sans-serif; color: #0F1B2D; position: relative; overflow: hidden">
+  <div aria-hidden="true" style="position: absolute; inset: 0; display: flex; flex-direction: column">
+    <div style="height: 190px; background: #0B2545"></div>
+    <div style="margin: -44px 16px 0; height: 110px; background: #FFFFFF; border-radius: 16px"></div>
+    <div style="margin: 12px 16px 0; height: 150px; background: #FFFFFF; border-radius: 16px"></div>
+    <div style="margin: 12px 16px 0; height: 110px; background: #FFFFFF; border-radius: 16px"></div>
+  </div>
+  <div aria-hidden="true" style="position: absolute; inset: 0; background: rgba(11,20,36,0.55)"></div>
+  <div style="position: absolute; left: 12px; right: 12px; top: 16px; background: rgba(255,255,255,0.97); border-radius: 18px; padding: 12px 14px; display: flex; gap: 12px; box-shadow: 0 6px 20px rgba(0,0,0,0.2)">
+    <span style="width: 38px; height: 38px; border-radius: 9px; border: 1.5px dashed #8FA6C4; flex-shrink: 0; font-size: 8px; color: #4A5768; display: flex; align-items: center; justify-content: center; text-align: center">[app icon]</span>
+    <span style="display: flex; flex-direction: column; gap: 2px; font-size: 13px; line-height: 1.35">
+      <span style="display: flex; justify-content: space-between; color: #4A5768; font-size: 12px"><span>HYDRO ONE</span><span>now</span></span>
+      <strong>We noticed an EV charging at your home</strong>
+      <span>Earn [Incentive] by joining [DR Program Name]. Tap to learn more.</span>
+    </span>
+  </div>
+  <section role="dialog" aria-labelledby="evt" style="position: absolute; left: 0; right: 0; bottom: 0; background: #FFFFFF; border-radius: 24px 24px 0 0; padding: 12px 22px 28px; display: flex; flex-direction: column; gap: 14px">
+    <span style="width: 40px; height: 4px; border-radius: 2px; background: #C3CCD8; align-self: center"></span>
+    <span style="width: 64px; height: 64px; border-radius: 32px; background: #EEEAFB; color: #5B4BC4; display: flex; align-items: center; justify-content: center; align-self: flex-start">
+      <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 16l1.5-5a2 2 0 0 1 2-1.5h7a2 2 0 0 1 2 1.5L19 16"/><path d="M4 16h16v3H4z"/><path d="M7 19v1.5M17 19v1.5"/><path d="M13 2l-2 3h3l-2 3"/></svg>
+    </span>
+    <h1 id="evt" style="margin: 0; font-size: 22px; line-height: 1.25; font-weight: 600">Looks like you've got a new EV</h1>
+    <p style="margin: 0; font-size: 15px; line-height: 1.5; color: #2B3645">We detected EV charging at <strong>[123 Main St]</strong> starting <strong>Oct 21, 6:14 PM</strong>. Your home isn't enrolled in a demand response program yet.</p>
+    <div style="background: #F5F3FD; border-radius: 14px; padding: 14px; display: flex; flex-direction: column; gap: 8px; font-size: 14px; color: #2A1F66">
+      <strong style="font-size: 15px">[DR Program Name]</strong>
+      <span>✓ Earn [Incentive] for shifting charging off-peak</span>
+      <span>✓ Only a few events a season, with notice</span>
+      <span>✓ You can opt out of any event</span>
+    </div>
+    <a href="Program.dc.html" style="height: 52px; border-radius: 12px; background: #5B4BC4; color: #FFFFFF; font-size: 16px; font-weight: 600; display: flex; align-items: center; justify-content: center; text-decoration: none">See program &amp; enroll</a>
+    <a href="Home.dc.html" style="height: 48px; border-radius: 12px; border: 1px solid #C3CCD8; color: #0F1B2D; font-size: 15px; display: flex; align-items: center; justify-content: center; text-decoration: none">Remind me later</a>
+    <a href="#notev" style="font-size: 14px; text-align: center; padding: 6px">Not an EV? Let us know</a>
+  </section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

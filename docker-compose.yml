@@ -1,0 +1,31 @@
+# One command to run the whole demo on a server:
+#   docker compose up -d --build
+# Then open http://<server>:3000
+services:
+  app:
+    build: .
+    image: hydro-one-ev-demo
+    restart: unless-stopped
+    ports:
+      - "${APP_PORT:-3000}:3000"
+    environment:
+      MONGO_URL: mongodb://mongo:27017/hydro_one_demo
+      JWT_SECRET: ${JWT_SECRET:-change-me-demo-only}
+      DEMO_CUSTOMER_FIRST_NAME: ${DEMO_CUSTOMER_FIRST_NAME:-Manny}
+      DEMO_ENROLLED_CUSTOMER_FIRST_NAME: ${DEMO_ENROLLED_CUSTOMER_FIRST_NAME:-Priya}
+      DEMO_TIMEZONE: ${DEMO_TIMEZONE:-America/Toronto}
+      EV_ALWAYS_CHARGING: "true"
+    depends_on:
+      - mongo
+
+  mongo:
+    image: mongo:7
+    restart: unless-stopped
+    volumes:
+      - mongo-data:/data/db
+    # Bound to localhost only (used by `pnpm dev`); not reachable from outside the server.
+    ports:
+      - "127.0.0.1:27017:27017"
+
+volumes:
+  mongo-data:

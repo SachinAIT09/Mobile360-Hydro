@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Hydro One app – DR program enrollment</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#1557C0}a:hover{color:#0B3D91}
+.stp{display:flex;gap:12px;align-items:flex-start;font-size:14px;line-height:1.4}
+.num{width:26px;height:26px;border-radius:13px;background:#5B4BC4;color:#FFFFFF;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+select{height:44px;border:1px solid #C3CCD8;border-radius:10px;padding:0 10px;font-size:14px;font-family:inherit;background:#FFFFFF;color:#0F1B2D}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #F2F5F8; font-family: 'IBM Plex Sans', system-ui, sans-serif; color: #0F1B2D; display: flex; flex-direction: column; overflow: hidden">
+  <header style="background: #2A1F66; color: #FFFFFF; padding: 14px 12px 22px; display: flex; flex-direction: column; gap: 10px">
+    <a href="EVDetected.dc.html" aria-label="Back" style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; color: #FFFFFF"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></a>
+    <div style="padding: 0 10px; display: flex; flex-direction: column; gap: 6px">
+      <span style="font-size: 12px; letter-spacing: 0.06em; color: #CFC6F2">DEMAND RESPONSE · EV</span>
+      <h1 style="margin: 0; font-size: 24px; font-weight: 600">[DR Program Name]</h1>
+      <span style="font-size: 14px; color: #E4DFFA">Charge smarter, help your local grid, and get rewarded.</span>
+    </div>
+  </header>
+  <main style="flex: 1; overflow: hidden; padding: 14px 16px; display: flex; flex-direction: column; gap: 12px">
+    <section style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px">
+      <div style="background: #FFFFFF; border-radius: 12px; padding: 10px; display: flex; flex-direction: column; gap: 2px"><strong style="font-size: 16px">[Incentive]</strong><span style="font-size: 12px; color: #4A5768">sign-up reward</span></div>
+      <div style="background: #FFFFFF; border-radius: 12px; padding: 10px; display: flex; flex-direction: column; gap: 2px"><strong style="font-size: 16px">[$X]</strong><span style="font-size: 12px; color: #4A5768">per event</span></div>
+      <div style="background: #FFFFFF; border-radius: 12px; padding: 10px; display: flex; flex-direction: column; gap: 2px"><strong style="font-size: 16px">≤ [N]</strong><span style="font-size: 12px; color: #4A5768">events / season</span></div>
+    </section>
+    <section style="background: #FFFFFF; border-radius: 16px; padding: 14px 16px; display: flex; flex-direction: column; gap: 12px">
+      <h2 style="margin: 0; font-size: 15px; font-weight: 600">How it works</h2>
+      <div class="stp"><span class="num">1</span><span>When your local line is under strain, we send you an alert in the app.</span></div>
+      <div class="stp"><span class="num">2</span><span>You pause EV charging for the event window, usually [2–3] hours.</span></div>
+      <div class="stp"><span class="num">3</span><span>You earn a credit on your bill. Can't take part? Opt out of that event.</span></div>
+    </section>
+    <section style="background: #FFFFFF; border-radius: 16px; padding: 14px 16px; display: flex; flex-direction: column; gap: 10px">
+      <h2 style="margin: 0; font-size: 15px; font-weight: 600">About your EV <span style="font-weight: 400; color: #4A5768; font-size: 13px">(optional)</span></h2>
+      <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px">
+        <label style="display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: #4A5768">Vehicle make<select><option>Select</option></select></label>
+        <label style="display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: #4A5768">Charger<select><option>Level 2</option><option>Level 1</option></select></label>
+      </div>
+    </section>
+    <label style="display: flex; gap: 10px; align-items: flex-start; font-size: 13px; line-height: 1.4; color: #2B3645"><input type="checkbox" style="width: 20px; height: 20px; flex-shrink: 0; margin: 0">I agree to the <a href="#terms">program terms</a> and to Hydro One using my smart meter data for this program.</label>
+    <a href="Enrolled.dc.html" style="margin-top: auto; height: 52px; border-radius: 12px; background: #5B4BC4; color: #FFFFFF; font-size: 16px; font-weight: 600; display: flex; align-items: center; justify-content: center; text-decoration: none; flex-shrink: 0">Enroll now</a>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

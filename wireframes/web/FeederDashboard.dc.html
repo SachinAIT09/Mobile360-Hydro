@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Hydro One – Feeder EV visibility</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&amp;family=IBM+Plex+Mono:wght@500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#1557C0}a:hover{color:#0B3D91}
+.card{background:#FFFFFF;border:1px solid #DDE3EA;border-radius:14px}
+.kpi{display:flex;flex-direction:column;gap:4px;padding:16px 18px}
+.kv{font-size:28px;font-weight:700;font-family:'IBM Plex Mono',monospace}
+.kl{font-size:13px;color:#4A5768}
+.btn{display:inline-flex;align-items:center;justify-content:center;min-height:40px;padding:0 14px;border-radius:10px;font-size:14px;font-weight:600;text-decoration:none;white-space:nowrap}
+.pri{background:#1557C0;color:#FFFFFF}.pri:hover{color:#FFFFFF;background:#0B3D91}
+.sec{border:1px solid #C3CCD8;color:#0F1B2D;background:#FFFFFF}
+th{font-size:12px;font-weight:600;color:#4A5768;text-align:left;padding:10px 12px;border-bottom:1px solid #DDE3EA;white-space:nowrap}
+td{font-size:14px;padding:10px 12px;border-bottom:1px solid #EEF1F5;white-space:nowrap}
+.mono{font-family:'IBM Plex Mono',monospace;font-size:13px}
+</style>
+</helmet>
+<div style="min-height: 100vh; background: #F2F5F8; font-family: 'IBM Plex Sans', system-ui, sans-serif; color: #0F1B2D">
+  <header style="background: #0B2545; color: #FFFFFF">
+    <div style="max-width: 1400px; margin: 0 auto; padding: 12px 24px; display: flex; flex-wrap: wrap; align-items: center; gap: 12px 28px">
+      <div style="width: 120px; height: 36px; border: 1.5px dashed #8FA6C4; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 11px; color: #C9D6E8">[Hydro One logo]</div>
+      <span style="font-size: 15px; font-weight: 600">Grid Edge Insights</span>
+      <nav aria-label="Sections" style="display: flex; flex-wrap: wrap; gap: 4px; flex: 1">
+        <a href="FeederDashboard.dc.html" style="color: #FFFFFF; background: rgba(255,255,255,0.14); padding: 10px 14px; border-radius: 8px; font-size: 14px; text-decoration: none; font-weight: 600">Feeder visibility</a>
+        <a href="Campaign.dc.html" style="color: #C9D6E8; padding: 10px 14px; border-radius: 8px; font-size: 14px; text-decoration: none">Campaign 360</a>
+        <a href="#events" style="color: #C9D6E8; padding: 10px 14px; border-radius: 8px; font-size: 14px; text-decoration: none">DR events</a>
+        <a href="#reports" style="color: #C9D6E8; padding: 10px 14px; border-radius: 8px; font-size: 14px; text-decoration: none">Reports</a>
+      </nav>
+      <span style="font-size: 13px; color: #C9D6E8">[Staff name] · Customer Programs</span>
+    </div>
+  </header>
+  <main style="max-width: 1400px; margin: 0 auto; padding: 24px; display: flex; flex-direction: column; gap: 20px">
+    <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 12px">
+      <div style="display: flex; flex-direction: column; gap: 6px">
+        <h1 style="margin: 0; font-size: 26px; font-weight: 600">You manage the EVs that signed up. This shows the ones that didn't.</h1>
+        <p style="margin: 0; font-size: 14px; color: #4A5768">EVs detected by Net2Grid from smart meter data, matched to substation and feeder, compared with program enrollment.</p>
+      </div>
+      <div style="display: flex; flex-wrap: wrap; gap: 8px">
+        <label style="display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: #4A5768">Region<select style="height: 40px; border: 1px solid #C3CCD8; border-radius: 8px; padding: 0 10px; font-family: inherit; font-size: 14px"><option>All regions</option></select></label>
+        <label style="display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: #4A5768">Period<select style="height: 40px; border: 1px solid #C3CCD8; border-radius: 8px; padding: 0 10px; font-family: inherit; font-size: 14px"><option>Last 30 days</option></select></label>
+      </div>
+    </div>
+
+    <section style="display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px">
+      <div class="card kpi"><span class="kv">37</span><span class="kl">Substations with matched EVs</span></div>
+      <div class="card kpi"><span class="kv">108</span><span class="kl">Feeders with matched EVs</span></div>
+      <div class="card kpi"><span class="kv" style="color: #9A5B00">1,726</span><span class="kl">Known, enrolled EVs</span></div>
+      <div class="card kpi"><span class="kv" style="color: #4A3BB0">1,770</span><span class="kl">Detected, unenrolled EVs</span></div>
+      <div class="card kpi" style="background: #2A1F66; border-color: #2A1F66"><span class="kv" style="color: #FFFFFF">51%</span><span class="kl" style="color: #E4DFFA">of EVs invisible to enrollment</span></div>
+    </section>
+
+    <section id="events" class="card" style="padding: 16px 18px; display: flex; flex-direction: column; gap: 12px">
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px">
+        <h2 style="margin: 0; font-size: 16px; font-weight: 600">Live events from Net2Grid</h2>
+        <span style="font-size: 12px; color: #4A5768">Sample events for illustration</span>
+      </div>
+      <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 12px; background: #F5F3FD">
+        <span class="mono" style="color: #4A5768; min-width: 72px">9:42 PM</span>
+        <span style="flex: 1 1 360px; font-size: 14px"><strong>284 EVs stopped charging</strong> on SUB-01 between 9:30 and 9:45 PM · <strong>118 not enrolled</strong></span>
+        <a class="btn pri" href="Campaign.dc.html">Target 118 with enrollment offer</a>
+      </div>
+      <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 12px; background: #FFF6E3">
+        <span class="mono" style="color: #4A5768; min-width: 72px">4:05 PM</span>
+        <span style="flex: 1 1 360px; font-size: 14px"><strong>SUB-02-F3 forecast at [92%] of capacity</strong>, 5–8 PM · [41] enrolled EVs on this feeder</span>
+        <a class="btn sec" href="Campaign.dc.html">Send stop-charging request</a>
+      </div>
+      <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 12px; background: #F2F5F8">
+        <span class="mono" style="color: #4A5768; min-width: 72px">6:14 PM</span>
+        <span style="flex: 1 1 360px; font-size: 14px"><strong>New EV detected</strong> at [123 Main St] (SUB-01-F1), not enrolled · onboarding message sent in app automatically</span>
+        <span style="font-size: 13px; color: #1E6B3A; font-weight: 600">✓ Auto-sent</span>
+      </div>
+    </section>
+
+    <section style="display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start">
+      <div class="card" style="flex: 1 1 240px; padding: 8px 0; min-width: 0">
+        <h2 style="margin: 8px 16px 8px; font-size: 14px; font-weight: 600; color: #4A5768">Substations, by total EVs</h2>
+        <sc-for list="{{subs}}" as="s" hint-placeholder-count="8">
+          <button onClick="{{s.pick}}" style="{{s.style}}">
+            <span style="display: flex; justify-content: space-between; font-weight: 600; font-size: 14px"><span>{{s.id}}</span><span>{{s.evs}} EVs</span></span>
+            <span style="font-size: 12px; color: #4A5768">{{s.known}}% known · {{s.pen}}% penetration</span>
+            <span style="display: flex; height: 6px; border-radius: 3px; overflow: hidden; background: #8B7FE0"><span style="{{s.bar}}"></span></span>
+          </button>
+        </sc-for>
+      </div>
+
+      <div class="card" style="flex: 999 1 520px; min-width: 0; padding: 18px; display: flex; flex-direction: column; gap: 14px">
+        <div style="display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px">
+          <div><div style="font-size: 12px; color: #4A5768">Selected substation</div><div style="font-size: 20px; font-weight: 600">SUB-01</div><div style="font-size: 13px; color: #4A5768">7 feeders · 463 matched EVs</div></div>
+          <div style="display: flex; gap: 4px; background: #EEF1F5; border-radius: 10px; padding: 4px; align-self: flex-start">
+            <button style="height: 36px; padding: 0 14px; border: none; border-radius: 8px; background: #FFFFFF; font-family: inherit; font-size: 14px; font-weight: 600">Diagram</button>
+            <button style="height: 36px; padding: 0 14px; border: none; border-radius: 8px; background: transparent; font-family: inherit; font-size: 14px; color: #2B3645">Map</button>
+          </div>
+        </div>
+        <div style="align-self: center; display: flex; flex-direction: column; align-items: center; gap: 4px">
+          <span style="width: 64px; height: 40px; border: 2px solid #0B2545; border-radius: 6px"></span>
+          <span style="font-size: 12px; color: #4A5768">Substation</span>
+          <span style="width: 2px; height: 18px; background: #8A96A6"></span>
+        </div>
+        <div style="height: 2px; background: #8A96A6; margin: 0 6%"></div>
+        <div style="display: flex; flex-wrap: wrap; justify-content: space-around; align-items: flex-end; gap: 10px; min-height: 170px">
+          <sc-for list="{{feeders}}" as="f" hint-placeholder-count="7">
+            <button onClick="{{f.pick}}" aria-label="{{f.aria}}" style="{{f.wrap}}">
+              <span style="display: flex; flex-direction: column; width: 34px; border-radius: 4px; overflow: hidden">
+                <span style="{{f.uBar}}"></span>
+                <span style="{{f.kBar}}"></span>
+                <span style="{{f.nBar}}"></span>
+              </span>
+              <span class="mono" style="font-size: 12px">{{f.short}}</span>
+              <span style="font-size: 12px; color: #4A5768">{{f.evs}} EVs</span>
+            </button>
+          </sc-for>
+        </div>
+        <div style="display: flex; flex-wrap: wrap; gap: 16px; font-size: 13px; color: #2B3645">
+          <span style="display: flex; align-items: center; gap: 6px"><span style="width: 12px; height: 12px; border-radius: 3px; background: #F2B33D"></span>Known / enrolled</span>
+          <span style="display: flex; align-items: center; gap: 6px"><span style="width: 12px; height: 12px; border-radius: 3px; background: #5B4BC4"></span>Detected, unenrolled</span>
+          <span style="display: flex; align-items: center; gap: 6px"><span style="width: 12px; height: 12px; border-radius: 3px; background: #C3CCD8"></span>Split shown on select</span>
+        </div>
+      </div>
+
+      <div class="card" style="flex: 1 1 300px; min-width: 0; padding: 18px; display: flex; flex-direction: column; gap: 10px">
+        <div><div style="font-size: 12px; color: #4A5768">SUB-01 feeder</div><div class="mono" style="font-size: 18px; font-weight: 600">{{sel.id}}</div></div>
+        <div style="display: flex; justify-content: space-between; font-size: 14px"><span>Known, enrolled EVs</span><strong style="color: #9A5B00">{{sel.known}}</strong></div>
+        <div style="display: flex; justify-content: space-between; font-size: 14px"><span>Detected, unenrolled EVs</span><strong style="color: #4A3BB0">{{sel.un}}</strong></div>
+        <div style="display: flex; justify-content: space-between; font-size: 14px"><span>Total matched EVs</span><strong>{{sel.evs}}</strong></div>
+        <div style="display: flex; justify-content: space-between; font-size: 14px"><span>Also confirmed by enrollment</span><strong>{{sel.conf}}</strong></div>
+        <div style="display: flex; justify-content: space-between; font-size: 14px"><span>Ground-truth validated</span><strong>{{sel.gt}}</strong></div>
+        <div style="display: flex; justify-content: space-between; font-size: 14px"><span>Premises on this feeder</span><strong>{{sel.prem}}</strong></div>
+        <div style="display: flex; justify-content: space-between; font-size: 14px"><span>EV penetration</span><strong>{{sel.pen}}</strong></div>
+        <p style="margin: 4px 0; font-size: 13px; line-height: 1.5; color: #2B3645; background: #F5F3FD; border-radius: 10px; padding: 10px 12px">{{sel.note}}</p>
+        <a class="btn pri" href="Campaign.dc.html">Target {{sel.un}} unenrolled · enrollment offer</a>
+        <a class="btn sec" href="Campaign.dc.html">Stop-charging request to {{sel.known}} enrolled</a>
+      </div>
+    </section>
+
+    <section class="card" style="padding: 18px; display: flex; flex-direction: column; gap: 10px">
+      <h2 style="margin: 0; font-size: 16px; font-weight: 600">Worst blind spots</h2>
+      <p style="margin: 0; font-size: 13px; color: #4A5768">Feeders with at least 15 EVs, ranked by the share invisible to enrollment.</p>
+      <div style="overflow-x: auto">
+        <div role="table" style="min-width: 760px; display: flex; flex-direction: column">
+          <div role="row" style="display: grid; grid-template-columns: 40px 130px 110px 130px 140px 1fr 120px; align-items: center; border-bottom: 1px solid #DDE3EA">
+            <span role="columnheader" class="th" style="font-size: 12px; font-weight: 600; color: #4A5768; padding: 10px 12px">#</span>
+            <span role="columnheader" style="font-size: 12px; font-weight: 600; color: #4A5768; padding: 10px 12px">Feeder</span>
+            <span role="columnheader" style="font-size: 12px; font-weight: 600; color: #4A5768; padding: 10px 12px">Enrolled</span>
+            <span role="columnheader" style="font-size: 12px; font-weight: 600; color: #4A5768; padding: 10px 12px">Unenrolled</span>
+            <span role="columnheader" style="font-size: 12px; font-weight: 600; color: #4A5768; padding: 10px 12px">Penetration</span>
+            <span role="columnheader" style="font-size: 12px; font-weight: 600; color: #4A5768; padding: 10px 12px">Gap (% invisible)</span>
+            <span role="columnheader" style="padding: 10px 12px"></span>
+          </div>
+          <sc-for list="{{blind}}" as="b" hint-placeholder-count="8">
+            <div role="row" style="display: grid; grid-template-columns: 40px 130px 110px 130px 140px 1fr 120px; align-items: center; border-bottom: 1px solid #EEF1F5; font-size: 14px">
+              <span role="cell" style="padding: 8px 12px">{{b.rank}}</span>
+              <span role="cell" class="mono" style="padding: 8px 12px">{{b.id}}</span>
+              <span role="cell" style="padding: 8px 12px">{{b.k}} known</span>
+              <span role="cell" style="padding: 8px 12px">{{b.u}} unenrolled</span>
+              <span role="cell" style="padding: 8px 12px">{{b.pen}}</span>
+              <span role="cell" style="padding: 8px 12px; display: flex; align-items: center; gap: 8px"><span style="width: 90px; height: 8px; border-radius: 4px; background: #EEF1F5; display: flex"><span style="{{b.bar}}"></span></span><strong>{{b.gap}}</strong></span>
+              <span role="cell" style="padding: 6px 12px"><a class="btn sec" style="min-height: 36px" href="Campaign.dc.html">Target {{b.u}}</a></span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </section>
+
+    <section class="card" style="padding: 18px; display: flex; flex-direction: column; gap: 8px">
+      <h2 style="margin: 0; font-size: 16px; font-weight: 600">No observed EV activity</h2>
+      <p style="margin: 0; font-size: 14px; line-height: 1.5; color: #2B3645">14 substations show no EV signal on any feeder, and 25 more have at least one dead feeder (55 feeders, 383 premises). Check whether these are truly zero EVs or a detection gap.</p>
+      <p style="margin: 0; font-size: 13px; color: #4A5768">Of 21,257 matched premises, 17,761 show no EV signal. 458 premises have no grid location yet and are excluded.</p>
+    </section>
+    <p style="margin: 0; font-size: 12px; color: #4A5768">Feeder figures: Net2Grid feeder EV visibility pilot, anonymized (Sep 2026). Shown as sample data.</p>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1640}}'>
+class Component extends DCLogic {
+  constructor(p) { super(p); this.state = { sub: 'SUB-01', feeder: 'SUB-01-F1' }; }
+  renderVals() {
+    const subsRaw = [
+      ['SUB-01', 463, 48, 15.3], ['SUB-02', 436, 52, 21.7], ['SUB-03', 342, 46, 17.5], ['SUB-04', 273, 59, 16.7],
+      ['SUB-05', 246, 58, 15.9], ['SUB-06', 245, 51, 34.2], ['SUB-07', 202, 42, 14.1], ['SUB-08', 139, 60, 12.2]
+    ];
+    const subs = subsRaw.map(([id, evs, known, pen]) => ({
+      id, evs, known, pen,
+      pick: () => this.setState({ sub: id }),
+      bar: 'width: ' + known + '%; background: #F2B33D',
+      style: 'display: flex; flex-direction: column; gap: 6px; width: 100%; text-align: left; padding: 10px 16px; border: none; font-family: inherit; color: #0F1B2D; cursor: pointer; ' + (this.state.sub === id ? 'background: #EEF3FC; box-shadow: inset 0 0 0 2px #1557C0; border-radius: 8px;' : 'background: transparent;')
+    }));
+    const fRaw = [
+      { id: 'SUB-01-F1', evs: 146, known: 69, un: 77, conf: 54, gt: 23, prem: 665, pen: '22%', note: '53% invisible. Enrollment accounts for 69 of 146 EVs here. The other 77 draw load with no enrollment, no notice and no way to curtail them today.' },
+      { id: 'SUB-01-F2', evs: 90 }, { id: 'SUB-01-F3', evs: 73 },
+      { id: 'SUB-01-F4', evs: 49, known: 15, un: 34, conf: '[–]', gt: '[–]', prem: 460, pen: '10.7%', note: '69.4% invisible. One of the worst blind spots on the network: 34 of 49 EVs are not enrolled.' },
+      { id: 'SUB-01-F5', evs: 44 }, { id: 'SUB-01-F6', evs: 38 }, { id: 'SUB-01-F7', evs: 23 }
+    ];
+    const scale = 140 / 146;
+    const feeders = fRaw.map((f) => {
+      const on = this.state.feeder === f.id;
+      const split = f.known !== undefined;
+      const h = (n) => Math.round(n * scale) + 'px';
+      return {
+        ...f,
+        short: f.id.replace('SUB-01-', ''),
+        aria: f.id + ', ' + f.evs + ' EVs',
+        pick: () => this.setState({ feeder: f.id }),
+        wrap: 'display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px; border-radius: 10px; font-family: inherit; color: #0F1B2D; cursor: pointer; ' + (on ? 'border: 2px solid #1557C0; background: #EEF3FC;' : 'border: 2px solid transparent; background: transparent;'),
+        uBar: 'display: block; background: #5B4BC4; height: ' + (split ? h(f.un) : '0px'),
+        kBar: 'display: block; background: #F2B33D; height: ' + (split ? h(f.known) : '0px'),
+        nBar: 'display: block; background: #C3CCD8; height: ' + (split ? '0px' : h(f.evs))
+      };
+    });
+    const cur = fRaw.find((f) => f.id === this.state.feeder) || fRaw[0];
+    const sel = cur.known !== undefined ? cur : { id: cur.id, evs: cur.evs, known: '[–]', un: '[–]', conf: '[–]', gt: '[–]', prem: '[–]', pen: '[–]', note: 'Enrolled / unenrolled split for this feeder comes from the Net2Grid feed.' };
+    const blindRaw = [
+      ['SUB-26-F1', 2, 15, '35.4% of 48', 88.2], ['SUB-15-F3', 2, 13, '18.8% of 80', 86.7], ['SUB-11-F2', 5, 28, '23.1% of 143', 84.8], ['SUB-11-F3', 5, 24, '28.2% of 103', 82.8],
+      ['SUB-27-F1', 3, 13, '20% of 80', 81.2], ['SUB-09-F1', 10, 23, '9.3% of 355', 69.7], ['SUB-01-F4', 15, 34, '10.7% of 460', 69.4], ['SUB-11-F1', 11, 25, '24.3% of 148', 69.4]
+    ];
+    const blind = blindRaw.map(([id, k, u, pen, gap], i) => ({ rank: i + 1, id, k, u, pen, gap: gap + '%', bar: 'width: ' + gap + '%; background: #5B4BC4; border-radius: 4px' }));
+    return { subs, feeders, sel, blind };
+  }
+}
+</script>
+</body>
+</html>

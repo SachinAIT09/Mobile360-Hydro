@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Hydro One app – Home</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#1557C0}a:hover{color:#0B3D91}
+.nav{display:flex;justify-content:space-around;align-items:center;height:76px;background:#FFFFFF;border-top:1px solid #DDE3EA;flex-shrink:0}
+.ni{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:11px;color:#4A5768;text-decoration:none;min-width:56px;min-height:44px;justify-content:center}
+.ni.on{color:#1557C0;font-weight:600}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #F2F5F8; font-family: 'IBM Plex Sans', system-ui, sans-serif; color: #0F1B2D; display: flex; flex-direction: column; overflow: hidden">
+  <header style="background: #0B2545; color: #FFFFFF; padding: 24px 20px 64px; display: flex; flex-direction: column; gap: 18px">
+    <div style="display: flex; align-items: center; justify-content: space-between">
+      <div style="width: 112px; height: 36px; border: 1.5px dashed #8FA6C4; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 11px; color: #C9D6E8">[Hydro One logo]</div>
+      <a href="Inbox.dc.html" aria-label="Messages, 2 unread" style="position: relative; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; color: #FFFFFF">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4z"/><path d="M10 20a2 2 0 0 0 4 0"/></svg>
+        <span style="position: absolute; top: 6px; right: 6px; min-width: 18px; height: 18px; border-radius: 9px; background: #F2B33D; color: #2B1A00; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center">2</span>
+      </a>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 4px">
+      <div style="font-size: 22px; font-weight: 600">Good evening, [First name]</div>
+      <div style="font-size: 13px; color: #C9D6E8">Account [•••• 4821] · [123 Main St, Peterborough]</div>
+    </div>
+  </header>
+  <main style="flex: 1; overflow: hidden; margin-top: -44px; padding: 0 16px 16px; display: flex; flex-direction: column; gap: 12px">
+    <section style="background: #FFFFFF; border-radius: 16px; padding: 18px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 10px rgba(11,37,69,0.08)">
+      <div style="display: flex; flex-direction: column; gap: 4px">
+        <div style="font-size: 13px; color: #4A5768">Amount due</div>
+        <div style="font-size: 28px; font-weight: 700">$[184.27]</div>
+        <div style="font-size: 13px; color: #4A5768">Due [Nov 8, 2026]</div>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 8px; align-items: stretch">
+        <a href="Pay.dc.html" style="height: 44px; padding: 0 22px; border-radius: 10px; background: #1557C0; color: #FFFFFF; font-weight: 600; font-size: 15px; display: flex; align-items: center; justify-content: center; text-decoration: none">Pay now</a>
+        <a href="Bill.dc.html" style="font-size: 13px; text-align: center">View bill</a>
+      </div>
+    </section>
+    <a href="EVDetected.dc.html" style="background: #EEEAFB; border: 1px solid #CFC6F2; border-radius: 16px; padding: 14px 16px; display: flex; align-items: center; gap: 12px; text-decoration: none; color: #2A1F66">
+      <span style="width: 40px; height: 40px; border-radius: 20px; background: #5B4BC4; color: #FFFFFF; display: flex; align-items: center; justify-content: center; flex-shrink: 0">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 16l1.5-5a2 2 0 0 1 2-1.5h7a2 2 0 0 1 2 1.5L19 16"/><path d="M4 16h16v3H4z"/><path d="M7 19v1.5M17 19v1.5"/></svg>
+      </span>
+      <span style="display: flex; flex-direction: column; gap: 2px; flex: 1">
+        <span style="font-size: 14px; font-weight: 600">EV detected · Not enrolled</span>
+        <span style="font-size: 13px">Earn [Incentive] with [DR Program Name]</span>
+      </span>
+      <span style="font-size: 20px" aria-hidden="true">›</span>
+    </a>
+    <a href="Energy.dc.html" style="background: #FFFFFF; border-radius: 16px; padding: 16px; display: flex; flex-direction: column; gap: 12px; text-decoration: none; color: #0F1B2D">
+      <span style="display: flex; justify-content: space-between; align-items: center">
+        <span style="font-size: 15px; font-weight: 600">Right now</span>
+        <span style="font-size: 12px; color: #1E6B3A; background: #E3F4E9; border-radius: 10px; padding: 3px 8px; font-weight: 600">● Live</span>
+      </span>
+      <span style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px">
+        <span style="display: flex; flex-direction: column; gap: 2px; background: #FFF6E3; border-radius: 10px; padding: 10px">
+          <span style="font-size: 12px; color: #5C3B00">Solar</span>
+          <span style="font-size: 18px; font-weight: 700">1.1 kW</span>
+        </span>
+        <span style="display: flex; flex-direction: column; gap: 2px; background: #EEF1F5; border-radius: 10px; padding: 10px">
+          <span style="font-size: 12px; color: #4A5768">From grid</span>
+          <span style="font-size: 18px; font-weight: 700">8.6 kW</span>
+        </span>
+        <span style="display: flex; flex-direction: column; gap: 2px; background: #EEEAFB; border-radius: 10px; padding: 10px">
+          <span style="font-size: 12px; color: #3B2E8F">EV charging</span>
+          <span style="font-size: 18px; font-weight: 700">7.2 kW</span>
+        </span>
+      </span>
+      <span style="font-size: 13px; color: #4A5768">Today: 46.9 kWh used · 94% of your solar used at home</span>
+    </a>
+    <section style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px">
+      <a href="Outage.dc.html" style="background: #FFFFFF; border-radius: 14px; padding: 14px; min-height: 44px; display: flex; flex-direction: column; gap: 8px; text-decoration: none; color: #0F1B2D">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#B45309" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l10 18H2z"/><path d="M12 10v5M12 18v.5"/></svg>
+        <span style="font-size: 14px; font-weight: 600">Report outage</span>
+        <span style="font-size: 12px; color: #1E6B3A">No outages at your address</span>
+      </a>
+      <a href="Inbox.dc.html" style="background: #FFFFFF; border-radius: 14px; padding: 14px; min-height: 44px; display: flex; flex-direction: column; gap: 8px; text-decoration: none; color: #0F1B2D">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1557C0" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4z"/><path d="M10 20a2 2 0 0 0 4 0"/></svg>
+        <span style="font-size: 14px; font-weight: 600">Messages</span>
+        <span style="font-size: 12px; color: #4A5768">1 grid alert · 1 offer</span>
+      </a>
+    </section>
+  </main>
+  <nav class="nav" aria-label="Main">
+    <a class="ni on" href="Home.dc.html"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg>Home</a>
+    <a class="ni" href="Energy.dc.html"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg>Energy</a>
+    <a class="ni" href="Bill.dc.html"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M6 2h9l5 5v15H6z"/><path d="M14 2v6h6"/><path d="M9 13h8M9 17h6"/></svg>Billing</a>
+    <a class="ni" href="Outage.dc.html"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l10 18H2z"/><path d="M12 10v5M12 18v.5"/></svg>Outage</a>
+    <a class="ni" href="Inbox.dc.html"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4z"/><path d="M10 20a2 2 0 0 0 4 0"/></svg>Messages</a>
+  </nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

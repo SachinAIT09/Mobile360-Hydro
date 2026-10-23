@@ -1,0 +1,45 @@
+{
+  "name": "@demo/api",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "dev": "concurrently -k -n tsc,node \"tsc -p tsconfig.build.json -w --preserveWatchOutput\" \"node --watch-path=dist dist/main.js\"",
+    "start": "node dist/main.js",
+    "seed": "tsc -p tsconfig.build.json && node dist/seed/run-seed.js",
+    "seed:reset": "tsc -p tsconfig.build.json && node dist/seed/run-seed.js --reset",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "eslint . --max-warnings 0",
+    "predev": "tsc -p tsconfig.build.json",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@demo/shared": "workspace:*",
+    "@nestjs/common": "^12.2.0",
+    "@nestjs/core": "^12.2.0",
+    "@nestjs/mongoose": "^12.0.0",
+    "@nestjs/platform-express": "^12.2.0",
+    "@nestjs/platform-socket.io": "^12.2.0",
+    "@nestjs/swagger": "*",
+    "@nestjs/websockets": "^12.2.0",
+    "class-transformer": "*",
+    "class-validator": "*",
+    "express": "^5.3.0",
+    "jsonwebtoken": "*",
+    "mongodb-memory-server": "^11.3.0",
+    "mongoose": "^9.11.3",
+    "qrcode": "^1.5.4",
+    "reflect-metadata": "*",
+    "rxjs": "*",
+    "socket.io": "^4.8.4"
+  },
+  "devDependencies": {
+    "@types/express": "*",
+    "@types/jsonwebtoken": "*",
+    "@types/node": "^22",
+    "@types/qrcode": "^1.5.6",
+    "concurrently": "^10.0.6",
+    "typescript": "~6.0.3"
+  },
+  "type": "module"
+}
