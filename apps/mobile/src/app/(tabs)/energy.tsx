@@ -1,7 +1,8 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { ScrollView, View } from 'react-native';
-import { fmtMoney, fmtTime, type EnergyRange, type EnergySummary } from '@demo/shared';
-import { Card, Chip, ErrorBox, HeroHeader, Loading, Overline, Pill, SectionTitle, StatCol, Txt } from '../../components/ui';
+import { Pressable, ScrollView, View } from 'react-native';
+import { router } from 'expo-router';
+import { fmtMoney, fmtTime, type EnergyRange, type EnergySummary, type MeSummary } from '@demo/shared';
+import { Card, Chip, ErrorBox, HeroHeader, IconTile, Loading, Overline, Pill, SectionTitle, StatCol, Txt } from '../../components/ui';
 import { Icon, type IconName } from '../../components/icons';
 import { colors } from '../../lib/theme';
 import { api } from '../../lib/config';
@@ -100,6 +101,8 @@ export default function EnergyScreen() {
             <View style={{ alignItems: 'center', marginTop: 8 }}>{r ? <FlowDiagram solarKw={r.solarKw} gridKw={r.gridImportKw} homeKw={r.homeKw} evKw={r.evKw} hasSolar={hasSolar} /> : <Loading />}</View>
           </Card>
 
+          {me?.smartCharging ? <SmartChargingCard smart={me.smartCharging} /> : null}
+
           {!data ? (
             <Loading />
           ) : (
@@ -167,6 +170,30 @@ export default function EnergyScreen() {
         </View>
       </ScrollView>
     </View>
+  );
+}
+
+function SmartChargingCard({ smart }: { smart: NonNullable<MeSummary['smartCharging']> }) {
+  const sub = smart.enabled
+    ? [smart.chargingNow ? 'Charging now' : smart.nextStart ? `Next charge ${fmtTime(smart.nextStart)}` : null, `saves ${fmtMoney(smart.savingsPerNight)}/night`].filter(Boolean).join(' · ')
+    : 'Charge in cheaper hours';
+  return (
+    <Pressable accessibilityRole="button" accessibilityLabel="Open smart charging" onPress={() => router.push('/smart-charging' as never)} style={({ pressed }) => ({ opacity: pressed ? 0.85 : 1 })}>
+      <Card padding={14}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 44 }}>
+          <IconTile name="carCharge" bg={colors.evTint} color={colors.ev} round />
+          <View style={{ flex: 1, gap: 2 }}>
+            <Txt size={15} weight="semibold">
+              Smart charging
+            </Txt>
+            <Txt size={13} color={colors.textMuted}>
+              {sub}
+            </Txt>
+          </View>
+          <Pill label={smart.enabled ? 'On' : 'Off'} color={smart.enabled ? colors.successText : colors.textMuted} bg={smart.enabled ? colors.successBg : colors.divider} style={{ alignSelf: 'center' }} />
+        </View>
+      </Card>
+    </Pressable>
   );
 }
 

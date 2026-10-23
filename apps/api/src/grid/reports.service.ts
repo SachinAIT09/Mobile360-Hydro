@@ -4,6 +4,8 @@ import { Db } from '../db/db.service.js';
 import { round1, round3 } from '../common/numbers.js';
 import { localParts } from '../common/time.js';
 import { config } from '../config.js';
+import { defaultNightShift } from '../energy/charging-plan.js';
+import { EV_CHARGE_KW } from '../energy/energy.model.js';
 
 const SOURCES: EnrollmentSource[] = ['APP_POPUP', 'CAMPAIGN', 'LEGACY'];
 
@@ -38,7 +40,7 @@ export class ReportsService {
   async summary(now = new Date()): Promise<ReportsSummary> {
     const tz = config.timezone;
     const since = new Date(now.getTime() - 31 * 86400000);
-    const [[enr], [dr], [resp], [camp]] = await Promise.all([
+    const [[enr], [dr], [resp], [camp], smartHomes] = await Promise.all([
       this.db.enrollments.aggregate<{
         active: { n: number }[];
         bySource: { _id: EnrollmentSource; n: number }[];
@@ -78,7 +80,9 @@ export class ReportsService {
           },
         },
       ]),
+      this.db.customers.countDocuments({ 'smartCharging.enabled': true }),
     ]);
+    const shift = defaultNightShift(now, tz);
 
     const bySource = Object.fromEntries(SOURCES.map((s) => [s, 0])) as Record<EnrollmentSource, number>;
     for (const row of enr?.bySource ?? []) if (row._id in bySource) bySource[row._id] = row.n;
@@ -104,7 +108,12 @@ export class ReportsService {
         drRequests: camp?.drRequests ?? 0,
         testSends: camp?.testSends ?? 0,
       },
-      smartCharging: { homes: 0, flexibleKw: 0, shiftedKwhPerNight: 0, peakAvoidedMw: 0 },
+      smartCharging: {
+        homes: smartHomes,
+        flexibleKw: round1(smartHomes * EV_CHARGE_KW),
+        shiftedKwhPerNight: round1(smartHomes * shift.shiftedKwh),
+        peakAvoidedMw: round3((smartHomes * shift.peakKwAvoided) / 1000),
+      },
     };
   }
 }

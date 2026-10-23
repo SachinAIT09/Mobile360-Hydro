@@ -1,13 +1,17 @@
 import { Injectable, Logger, NotFoundException, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { Types } from 'mongoose';
-import { DEMO_RATE_PER_KWH, type EnergyRange, type EnergyReading, type EnergySummary } from '@demo/shared';
+import { DEMO_RATE_PER_KWH, type EnergyRange, type EnergyReading, type EnergySummary, type SmartChargingPlan } from '@demo/shared';
 import { config } from '../config.js';
 import { Db } from '../db/db.service.js';
 import type { CustomerDoc } from '../db/schemas.js';
 import { round1, round2 } from '../common/numbers.js';
 import { localHour, localMidnight, localParts } from '../common/time.js';
 import { RealtimeService } from '../realtime/realtime.service.js';
+import { avgEvKw, evKwAt, localClock, planCharging, repeatDaily, sessionFor } from './charging-plan.js';
 import { EV_CHARGE_KW, historicalEvKw, point } from './energy.model.js';
+import { integrate, type EnergyAcc } from './integrate.js';
+import { activeBoost, SmartChargingService } from './smart-charging.service.js';
+import { costOfSteps, periodAt } from './tariff.js';
 
 export interface EvState {
   hasEv: boolean;
@@ -24,6 +28,7 @@ export class EnergyService implements OnModuleInit, OnModuleDestroy {
   constructor(
     private readonly db: Db,
     private readonly realtime: RealtimeService,
+    private readonly smart: SmartChargingService,
   ) {}
 
   onModuleInit() {
@@ -61,7 +66,11 @@ export class EnergyService implements OnModuleInit, OnModuleDestroy {
     ]);
     const hasEv = !!det || !!enr;
     const h = localHour(at);
-    const charging = c.evChargingActive || (hasEv && (config.evAlwaysCharging || (h >= 18 && h < 23)));
+    // Smart charging (when on) decides when the car draws power, then DR pausing still applies.
+    const plan = hasEv && c.smartCharging?.enabled ? await this.smart.planFor(c, at) : null;
+    const charging = plan
+      ? !!activeBoost(c, at) || evKwAt(plan.slots, at) > 0
+      : c.evChargingActive || (hasEv && (config.evAlwaysCharging || (h >= 18 && h < 23)));
     let pausedForEvent = false;
     if (charging) {
       const active = await this.db.drEvents.find({ status: 'ACTIVE', targetCustomerIds: c._id }).lean();
@@ -89,53 +98,47 @@ export class EnergyService implements OnModuleInit, OnModuleDestroy {
     return this.readingFor(await this.customer(customerId));
   }
 
-  /** Integrate the model in 15-minute steps between two instants. */
-  private integrate(from: Date, to: Date, hasSolar: boolean, hasEv: boolean, nowEvKw: number | null, now: Date) {
-    const acc = { prod: 0, cons: 0, self: 0, exp: 0, imp: 0, ev: 0, heating: 0, alwaysOn: 0, other: 0, peakW: 0, peakAt: null as Date | null };
-    const step = 15 * 60000;
-    for (let t = from.getTime(); t < to.getTime(); t += step) {
-      const dtH = Math.min(step, to.getTime() - t) / 3600000;
-      const at = new Date(t);
-      const h = localHour(at);
-      const isNow = nowEvKw !== null && now.getTime() - t < step && now.getTime() >= t;
-      const evKw = isNow ? nowEvKw : historicalEvKw(h, hasEv);
-      const p = point(h, Math.floor(t / step), { hasSolar, evKw });
-      acc.prod += p.solarKw * dtH;
-      acc.cons += p.homeKw * dtH;
-      acc.self += Math.min(p.solarKw, p.homeKw) * dtH;
-      acc.exp += p.gridExportKw * dtH;
-      acc.imp += p.gridImportKw * dtH;
-      acc.ev += p.evKw * dtH;
-      acc.heating += p.heatingKw * dtH;
-      acc.alwaysOn += p.alwaysOnKw * dtH;
-      acc.other += p.otherKw * dtH;
-      if (p.solarKw * 1000 > acc.peakW) {
-        acc.peakW = p.solarKw * 1000;
-        acc.peakAt = at;
-      }
-    }
-    return acc;
+  /** EV kW per 15-minute step for the summary: the smart plan (repeated nightly) when on, else the historical pattern. */
+  private evProfile(plan: SmartChargingPlan | null, hasEv: boolean): (t: number, hour: number) => number {
+    if (!plan) return (_t, h) => historicalEvKw(h, hasEv);
+    const slots = repeatDaily(plan.slots);
+    return (t) => avgEvKw(slots, t, t + 15 * 60000);
+  }
+
+  /** Cost of a step's grid import on the customer's time-based rate plan (TIERED is priced afterwards from the total). */
+  private static costFn(plan: SmartChargingPlan | null) {
+    if (!plan || plan.settings.ratePlan === 'TIERED') return undefined;
+    const id = plan.settings.ratePlan;
+    return (t: number, _h: number, kwh: number) => {
+      const { hour, weekday } = localClock(t, config.timezone);
+      return kwh * periodAt(id, hour, weekday).rate;
+    };
   }
 
   async summary(customerId: string, range: EnergyRange, now = new Date()): Promise<EnergySummary> {
     const c = await this.customer(customerId);
     const ev = await this.evState(c, now);
+    const plan = ev.hasEv && c.smartCharging?.enabled ? await this.smart.planFor(c, now) : null;
+    const evKwAtStep = this.evProfile(plan, ev.hasEv);
+    const costOf = EnergyService.costFn(plan);
     const midnight = localMidnight(now);
-    const today = this.integrate(midnight, now, c.hasSolar, ev.hasEv, ev.evKw, now);
+    const today = integrate({ from: midnight, to: now, hasSolar: c.hasSolar, evKwAt: evKwAtStep, nowEvKw: ev.evKw, now, costOf });
     const lp = localParts(now);
     const dayName = now.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', timeZone: config.timezone });
 
-    let acc = today;
+    let acc: EnergyAcc = today;
+    let days = 1;
     let label = `Today, ${dayName.replace(',', '')}`;
     if (range !== 'day') {
-      const fullDay = this.integrate(midnight, new Date(midnight.getTime() + 86400000), c.hasSolar, ev.hasEv, null, now);
+      const fullDay = integrate({ from: midnight, to: new Date(midnight.getTime() + 86400000), hasSolar: c.hasSolar, evKwAt: evKwAtStep, nowEvKw: null, now, costOf });
       const weekday = new Date(Date.UTC(lp.year, lp.month - 1, lp.day)).getUTCDay();
       const dayOfYear = Math.floor((Date.UTC(lp.year, lp.month - 1, lp.day) - Date.UTC(lp.year, 0, 1)) / 86400000);
       const priorDays = range === 'week' ? weekday : range === 'month' ? lp.day - 1 : dayOfYear;
-      const scale = (k: keyof typeof fullDay) => (fullDay[k] as number) * priorDays + (today[k] as number);
+      days = priorDays + 1;
+      const scale = (k: Exclude<keyof EnergyAcc, 'peakAt'>) => fullDay[k] * priorDays + today[k];
       acc = {
         prod: scale('prod'), cons: scale('cons'), self: scale('self'), exp: scale('exp'), imp: scale('imp'), ev: scale('ev'),
-        heating: scale('heating'), alwaysOn: scale('alwaysOn'), other: scale('other'),
+        heating: scale('heating'), alwaysOn: scale('alwaysOn'), other: scale('other'), cost: scale('cost'),
         peakW: Math.max(fullDay.peakW, today.peakW),
         peakAt: today.peakW >= fullDay.peakW ? today.peakAt : fullDay.peakAt,
       };
@@ -153,6 +156,15 @@ export class EnergyService implements OnModuleInit, OnModuleDestroy {
       }
     }
     const prod = c.hasSolar ? acc.prod : 0;
+    let cost = acc.imp * DEMO_RATE_PER_KWH;
+    if (plan) {
+      if (plan.settings.ratePlan !== 'TIERED') cost = acc.cost;
+      else {
+        // Tiers are monthly: price the average month in the range.
+        const months = Math.max(1, days / 30);
+        cost = costOfSteps([{ hour: 0, weekday: 1, kwh: acc.imp / months }], 'TIERED') * months;
+      }
+    }
     return {
       range,
       label,
@@ -164,7 +176,7 @@ export class EnergyService implements OnModuleInit, OnModuleDestroy {
       exportedKwh: round1(c.hasSolar ? acc.exp : 0),
       exportedPct: c.hasSolar && prod > 0.05 ? Math.round((acc.exp / prod) * 100) : null,
       importedKwh: round1(acc.imp),
-      costEstimate: round2(acc.imp * DEMO_RATE_PER_KWH),
+      costEstimate: round2(cost),
       breakdown: [
         { key: 'ev', label: 'EV charging', kWh: round1(acc.ev) },
         { key: 'heating', label: 'Heating/cooling', kWh: round1(acc.heating) },
@@ -182,9 +194,24 @@ export class EnergyService implements OnModuleInit, OnModuleDestroy {
     const from = start.getTime() - 2 * 3600000;
     const to = end.getTime() + 2 * 3600000;
     const step = 15 * 60000;
+    // Smart charging on: outside the window the car follows a plan that charges around the event.
+    const s = c.smartCharging?.enabled ? c.smartCharging : null;
+    const planned = s
+      ? repeatDaily(
+          planCharging({
+            session: sessionFor(start, s.readyBy),
+            needKwh: s.targetKwh,
+            maxKw: EV_CHARGE_KW,
+            planId: s.ratePlan,
+            blocked: [{ start, end }],
+            tz: config.timezone,
+          }).slots,
+        )
+      : null;
     for (let t = from; t <= to; t += step) {
       const inWindow = t >= start.getTime() && t < end.getTime();
-      const evKw = inWindow ? (paused ? 0 : EV_CHARGE_KW) : t < start.getTime() ? EV_CHARGE_KW : t < end.getTime() + 2 * 3600000 ? EV_CHARGE_KW : 0;
+      const outside = planned ? avgEvKw(planned, t, t + step) : t < start.getTime() ? EV_CHARGE_KW : t < end.getTime() + 2 * 3600000 ? EV_CHARGE_KW : 0;
+      const evKw = inWindow ? (paused ? 0 : EV_CHARGE_KW) : outside;
       const p = point(localHour(new Date(t)), Math.floor(t / step), { hasSolar: c.hasSolar, evKw });
       out.push({ t: new Date(t).toISOString(), kw: round2(p.homeKw) });
     }

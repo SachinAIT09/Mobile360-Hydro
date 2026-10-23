@@ -5,6 +5,7 @@ import { Db } from '../db/db.service.js';
 import type { BillDoc, CustomerDoc, OutageDoc, ProgramDoc } from '../db/schemas.js';
 import { DrEventsService } from '../dr-events/dr-events.service.js';
 import { EnergyService } from '../energy/energy.service.js';
+import { SmartChargingService } from '../energy/smart-charging.service.js';
 import { RealtimeService } from '../realtime/realtime.service.js';
 import { localParts } from '../common/time.js';
 
@@ -17,6 +18,7 @@ export class CustomersService {
     private readonly energy: EnergyService,
     private readonly drEvents: DrEventsService,
     private readonly realtime: RealtimeService,
+    private readonly smart: SmartChargingService,
   ) {}
 
   static profile(c: CustomerDoc): CustomerProfile {
@@ -158,7 +160,19 @@ export class CustomersService {
       nearbyOutage,
       today: { usedKwh: day.consumptionKwh, selfConsumptionPct: day.selfConsumptionPct },
       live,
-      smartCharging: null,
+      smartCharging: await this.smartSnapshot(c, ev.status !== 'NONE'),
+    };
+  }
+
+  /** Home-screen smart-charging snapshot: null when the home has no EV and never saved settings. */
+  private async smartSnapshot(c: CustomerDoc, hasEv: boolean): Promise<MeSummary['smartCharging']> {
+    if (!hasEv && !c.smartCharging) return null;
+    const plan = await this.smart.get(String(c._id));
+    return {
+      enabled: plan.settings.enabled,
+      chargingNow: plan.settings.enabled && plan.chargingNow,
+      nextStart: plan.settings.enabled ? plan.nextStart : null,
+      savingsPerNight: plan.savings,
     };
   }
 
