@@ -12,6 +12,9 @@ export type AuditTarget = AuditEntry['target'];
 /** Actor for things the server does on its own (scheduled dispatch, automatic DR end). */
 export const SYSTEM_ACTOR: AuditActor = { userId: null, name: 'System', email: null, kind: 'SYSTEM' };
 
+/** The campaign dispatcher, sending scheduled campaigns when they fall due. */
+export const SCHEDULER_ACTOR: AuditActor = { ...SYSTEM_ACTOR, name: 'Scheduler' };
+
 /** Resolves the signed-in staff user into an audit actor (name + email from the users collection). */
 export async function actorFromUser(db: Db, user: RequestUser | null | undefined): Promise<AuditActor> {
   if (!user || !Types.ObjectId.isValid(user.userId)) return SYSTEM_ACTOR;
@@ -55,9 +58,9 @@ export class AuditService {
     return docs.map((d) => AuditService.toDto(d));
   }
 
-  /** Every entry about one target (campaign / DR event id), oldest first. */
-  async forTarget(id: string): Promise<AuditEntry[]> {
-    const docs = await this.db.audit.find({ 'target.id': id }).sort({ at: 1, _id: 1 }).lean();
+  /** Every entry about one or more targets (campaign / DR event ids), oldest first. */
+  async forTarget(...ids: string[]): Promise<AuditEntry[]> {
+    const docs = await this.db.audit.find({ 'target.id': { $in: ids } }).sort({ at: 1, _id: 1 }).lean();
     return docs.map((d) => AuditService.toDto(d));
   }
 }

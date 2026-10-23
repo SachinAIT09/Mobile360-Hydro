@@ -1,11 +1,20 @@
 import { Link } from 'react-router-dom';
-import { BRAND, fmtDate, fmtInt, fmtTime, type Campaign } from '@demo/shared';
+import { BRAND, fmtDate, fmtInt, fmtTime, type Campaign, type CampaignStatus } from '@demo/shared';
 import { MOBILE_WEB_URL, useLoad, useSocketEvent } from '../lib/client';
 import { PageHeader } from '../components/PageHeader';
 import { Icon } from '../components/icons';
 import { EmptyState, ErrorNotice, LoadingBlock } from '../components/State';
 
+const STATUS_PILL: Record<Exclude<CampaignStatus, 'SENT'>, { tone: string; label: string }> = {
+  SCHEDULED: { tone: 'accent', label: 'Scheduled' },
+  SENDING: { tone: 'warn', label: 'Sending' },
+  CANCELLED: { tone: 'grey', label: 'Cancelled' },
+};
+
 function keyStats(c: Campaign): string {
+  if (c.status === 'SCHEDULED') return `Sends ${fmtDate(c.scheduledFor ?? c.sentAt, { month: 'short', day: 'numeric' })} · ${fmtTime(c.scheduledFor ?? c.sentAt)}`;
+  if (c.status === 'CANCELLED') return 'Not sent';
+  if (c.status === 'SENDING') return 'Sending…';
   if (c.type === 'ENROLL_OFFER') {
     return `${fmtInt(c.stats.delivered)} delivered · ${fmtInt(c.stats.opened)} opened · ${fmtInt(c.stats.acted)} enrolled`;
   }
@@ -14,17 +23,21 @@ function keyStats(c: Campaign): string {
 
 export function CampaignsPage() {
   const { data, error, loading, reload, setData } = useLoad((api) => api.campaigns());
-  useSocketEvent('campaign:statsChanged', (c) => {
+  const upsert = (c: Campaign) => {
     setData((prev) => {
       const list = prev ?? [];
       return list.some((x) => x.id === c.id) ? list.map((x) => (x.id === c.id ? c : x)) : [c, ...list];
     });
-  });
+  };
+  useSocketEvent('campaign:statsChanged', upsert);
+  useSocketEvent('campaign:statusChanged', upsert);
   useSocketEvent('demo:reset', () => void reload());
 
   const list = [...(data ?? [])].sort((a, b) => b.sentAt.localeCompare(a.sentAt));
-  const offers = list.filter((c) => c.type === 'ENROLL_OFFER').length;
-  const requests = list.length - offers;
+  const sentList = list.filter((c) => c.status === 'SENT');
+  const scheduledCount = list.filter((c) => c.status === 'SCHEDULED').length;
+  const offers = sentList.filter((c) => c.type === 'ENROLL_OFFER').length;
+  const requests = sentList.length - offers;
 
   return (
     <main className="page">
@@ -46,8 +59,8 @@ export function CampaignsPage() {
       <section className="kpis" aria-label="Campaign totals">
         <div className="card kpi">
           <span className="kl">Campaigns sent</span>
-          <span className="kv">{data ? fmtInt(list.length) : '—'}</span>
-          <span className="ks">including test sends</span>
+          <span className="kv">{data ? fmtInt(sentList.length) : '—'}</span>
+          <span className="ks">including test sends{scheduledCount ? ` · ${scheduledCount} scheduled` : ''}</span>
         </div>
         <div className="card kpi">
           <span className="kl">Enrollment offers</span>
@@ -86,7 +99,7 @@ export function CampaignsPage() {
             <table className="tbl">
               <thead>
                 <tr>
-                  <th scope="col">Sent</th>
+                  <th scope="col">Sent / due</th>
                   <th scope="col">Type</th>
                   <th scope="col">Title</th>
                   <th scope="col">Audience</th>
@@ -110,9 +123,30 @@ export function CampaignsPage() {
                             Test
                           </span>
                         )}
+                        {c.status !== 'SENT' && (
+                          <span className={`pill ${STATUS_PILL[c.status].tone}`} style={{ marginLeft: 6 }}>
+                            {STATUS_PILL[c.status].label}
+                          </span>
+                        )}
+                        {(c.variants?.length ?? 0) > 1 && (
+                          <span className="pill accent" style={{ marginLeft: 6 }} title={c.winner ? `Variant ${c.winner} leading` : 'A/B test'}>
+                            A/B{c.winner ? ` · ${c.winner} leads` : ''}
+                          </span>
+                        )}
                       </td>
-                      <td style={{ whiteSpace: 'normal', minWidth: 220, fontWeight: 600, color: 'var(--navy)' }}>{c.title}</td>
-                      <td>{c.audienceLabel}</td>
+                      <td style={{ whiteSpace: 'normal', minWidth: 220, fontWeight: 600 }}>
+                        <Link to={`/campaigns/${c.id}`} style={{ color: 'var(--navy)' }}>
+                          {c.title}
+                        </Link>
+                      </td>
+                      <td>
+                        {c.audienceLabel}
+                        {c.audience.kind === 'FEEDERS' && (
+                          <span className="pill grey" style={{ marginLeft: 6 }} title={c.audience.feederCodes.join(', ')}>
+                            {c.audience.feederCodes.length} feeders
+                          </span>
+                        )}
+                      </td>
                       <td className="mono">{fmtInt(c.stats.targeted)}</td>
                       <td>{keyStats(c)}</td>
                       <td>

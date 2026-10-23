@@ -31,10 +31,22 @@ export function seedFromId(id: string): number {
  * Plans realistic delivery/open/response behaviour for synthetic recipients.
  * Deterministic for a given seed. Offers: ~98% delivered, ~62% opened, ~18% enroll.
  * Stop-charging: ~84% respond, ~76% pause, the remaining responders opt out.
+ * `rateScale` multiplies the act-once-opened probability (synthetic A/B difference for variant B).
  */
-export function planSimulation<T>(type: SimulatedCampaignType, targets: readonly T[], seed: number, ticks = SIMULATION_TICKS): SimulationPlan<T>[] {
+export function planSimulation<T>(
+  type: SimulatedCampaignType,
+  targets: readonly T[],
+  seed: number,
+  ticks = SIMULATION_TICKS,
+  rateScale = 1,
+): SimulationPlan<T>[] {
   const rnd = prng(seed);
   const rates = SIMULATION_RATES;
+  // rateScale (A/B variant B) scales the chance of acting once opened; 1 keeps the baseline exactly.
+  const k = Math.max(0, rateScale);
+  const pEnroll = Math.min(1, (rates.ENROLL_OFFER.enrolled / rates.ENROLL_OFFER.opened) * k);
+  const pRespond = Math.min(1, (rates.STOP_CHARGING.responded / rates.STOP_CHARGING.opened) * k);
+  const pPause = Math.min(pRespond, (rates.STOP_CHARGING.paused / rates.STOP_CHARGING.opened) * k);
   return targets.map((c) => {
     const deliver = rnd() < rates.delivered ? 1 + Math.floor(rnd() * 2) : -1;
     const pOpen = type === 'ENROLL_OFFER' ? rates.ENROLL_OFFER.opened : rates.STOP_CHARGING.opened;
@@ -44,10 +56,10 @@ export function planSimulation<T>(type: SimulatedCampaignType, targets: readonly
     if (open > 0) {
       const r = rnd();
       if (type === 'ENROLL_OFFER') {
-        if (r < rates.ENROLL_OFFER.enrolled / rates.ENROLL_OFFER.opened) act = open + 1 + Math.floor(rnd() * 4);
-      } else if (r < rates.STOP_CHARGING.responded / rates.STOP_CHARGING.opened) {
+        if (r < pEnroll) act = open + 1 + Math.floor(rnd() * 4);
+      } else if (r < pRespond) {
         act = open + Math.floor(rnd() * 4);
-        response = r < rates.STOP_CHARGING.paused / rates.STOP_CHARGING.opened ? 'PAUSE' : 'OPT_OUT';
+        response = r < pPause ? 'PAUSE' : 'OPT_OUT';
       }
     }
     return { c, deliver, open: Math.min(open, ticks), act: Math.min(act, ticks), response };

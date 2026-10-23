@@ -6,6 +6,12 @@ import { PageHeader } from '../components/PageHeader';
 import { Icon } from '../components/icons';
 import { EmptyState, ErrorNotice, LoadingBlock } from '../components/State';
 
+/** "SUB-01-F1" or "SUB-01-F1 +2" for a multi-feeder event. */
+function feederText(e: Pick<DrEvent, 'feederCode' | 'feederCodes'>): string {
+  const n = e.feederCodes?.length ?? 0;
+  return n > 1 ? `${e.feederCode} +${n - 1}` : e.feederCode;
+}
+
 function statusPill(st: DrEventStatus | null) {
   return st === 'ACTIVE' ? 'warn' : st === 'ENDED' ? 'ok' : 'grey';
 }
@@ -15,25 +21,34 @@ export function EventsPage() {
   const api = useApi();
   const campaigns = useLoad((a) => a.campaigns());
   const demo = useLoad((a) => a.demoState());
+  const events = useLoad((a) => a.drEvents());
+  const reports = useLoad((a) => a.reports());
   const [known, setKnown] = useState<Record<string, DrEvent>>({});
   const [busy, setBusy] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
 
   useSocketEvent('drEvent:statusChanged', (e) => setKnown((k) => ({ ...k, [e.id]: e })));
   useSocketEvent('campaign:statsChanged', () => void campaigns.reload());
+  useSocketEvent('campaign:statusChanged', () => {
+    void campaigns.reload();
+    void events.reload();
+  });
   useSocketEvent('demo:reset', () => {
     setKnown({});
     void campaigns.reload();
+    void events.reload();
     void demo.reload();
+    void reports.reload();
   });
 
   const active = demo.data?.activeDrEvent ?? null;
   const drCampaigns = (campaigns.data ?? []).filter((c) => c.drEventId).sort((a, b) => b.sentAt.localeCompare(a.sentAt));
 
+  const byId = new Map((events.data ?? []).map((e) => [e.id, e]));
   function statusOf(id: string): DrEventStatus | null {
     if (known[id]) return known[id].status;
     if (active && active.id === id) return active.status;
-    return null;
+    return byId.get(id)?.status ?? null;
   }
 
   async function act(id: string, action: 'start' | 'end') {
@@ -88,6 +103,15 @@ export function EventsPage() {
           <span className="kv">{campaigns.data ? `${totals.mw.toFixed(2)} MW` : '—'}</span>
           <span className="ks">summed over ended events</span>
         </div>
+        <div className="card kpi">
+          <span className="kl">Smart-charging homes</span>
+          <span className="kv">{reports.data ? fmtInt(reports.data.smartCharging.homes) : '—'}</span>
+          <span className="ks">
+            {reports.data
+              ? `${(reports.data.smartCharging.flexibleKw / 1000).toFixed(2)} MW of EV load shifted off-peak automatically`
+              : 'EV load scheduled off-peak'}
+          </span>
+        </div>
       </section>
 
       {err && <ErrorNotice message={err} />}
@@ -98,7 +122,7 @@ export function EventsPage() {
               <Icon name="bolt" size={18} />
             </span>
             <h2 id="active-h" className="h2">
-              Current event · <span className="mono">{active.feederCode}</span>
+              Current event · <span className="mono">{feederText(active)}</span>
             </h2>
             <span className={`pill ${statusPill(activeStatus)}`}>{activeStatus}</span>
           </div>
@@ -138,6 +162,7 @@ export function EventsPage() {
               <thead>
                 <tr>
                   <th scope="col">Sent</th>
+                  <th scope="col">Feeder</th>
                   <th scope="col">Audience</th>
                   <th scope="col">Status</th>
                   <th scope="col">Responded</th>
@@ -150,9 +175,13 @@ export function EventsPage() {
                 {drCampaigns.map((c) => {
                   const id = c.drEventId as string;
                   const st = statusOf(id);
+                  const ev = known[id] ?? byId.get(id);
                   return (
                     <tr key={c.id}>
                       <td>{fmtDate(c.sentAt, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}</td>
+                      <td className="mono" title={ev?.feederCodes?.join(', ')}>
+                        {ev ? feederText(ev) : '—'}
+                      </td>
                       <td style={{ fontWeight: 600, color: 'var(--navy)' }}>
                         {c.audienceLabel}
                         {c.isTest ? ' (test)' : ''}

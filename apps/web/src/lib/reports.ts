@@ -1,4 +1,4 @@
-import type { BlindSpot, Campaign, DrEvent, DrEventStatus, EnrollmentSource, FeederStat, SubstationStat } from '@demo/shared';
+import type { AuditAction, BlindSpot, Campaign, DrEvent, DrEventStatus, EnrollmentSource, FeederStat, SubstationStat } from '@demo/shared';
 
 /**
  * Pure aggregations behind the Reports page. Everything here is derived from the
@@ -225,4 +225,36 @@ function csvEscape(v: CsvCell): string {
 /** RFC 4180-style CSV with CRLF line ends; quotes only cells that need it. */
 export function toCsv(headers: string[], rows: CsvCell[][]): string {
   return [headers, ...rows].map((r) => r.map(csvEscape).join(',')).join('\r\n') + '\r\n';
+}
+
+// ---------------------------------------------------------------- audit log display
+
+export const AUDIT_ACTION_LABEL: Record<AuditAction, string> = {
+  CAMPAIGN_SENT: 'Sent campaign',
+  CAMPAIGN_SCHEDULED: 'Scheduled campaign',
+  CAMPAIGN_CANCELLED: 'Cancelled campaign',
+  CAMPAIGN_TEST_SENT: 'Sent test',
+  CAMPAIGN_DISPATCHED: 'Sent scheduled campaign',
+  DR_STARTED: 'Started DR event',
+  DR_ENDED: 'Ended DR event',
+  DEMO_RESET: 'Reset demo',
+};
+
+/** "Jordan Reyes" → "JR"; "Scheduler" → "S". */
+export function initials(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return '?';
+  return (parts[0][0] + (parts.length > 1 ? parts[parts.length - 1][0] : '')).toUpperCase();
+}
+
+/** "just now", "5 min ago", "3 h ago", "2 days ago"; future times read "in 4 min". */
+export function timeAgo(iso: string, now = Date.now()): string {
+  const diff = now - new Date(iso).getTime();
+  const abs = Math.abs(diff);
+  const fmt = (n: number, unit: string) => (diff >= 0 ? `${n} ${unit} ago` : `in ${n} ${unit}`);
+  if (abs < 45_000) return diff >= 0 ? 'just now' : 'in under a minute';
+  if (abs < 3600_000) return fmt(Math.round(abs / 60_000), 'min');
+  if (abs < 86400_000) return fmt(Math.round(abs / 3600_000), 'h');
+  const days = Math.round(abs / 86400_000);
+  return fmt(days, days === 1 ? 'day' : 'days');
 }

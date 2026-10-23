@@ -10,6 +10,9 @@ import {
   shortFeederCode,
   substationKnownTop,
   toCsv,
+  AUDIT_ACTION_LABEL,
+  initials,
+  timeAgo,
 } from './reports';
 
 const stats = (p: Partial<CampaignStats> = {}): CampaignStats => ({
@@ -196,5 +199,29 @@ describe('toCsv', () => {
   it('quotes cells with commas, quotes and newlines and uses CRLF', () => {
     const csv = toCsv(['a', 'b'], [['plain', 1], ['has, comma', 'say "hi"'], [null, 'line\nbreak']]);
     expect(csv).toBe('a,b\r\nplain,1\r\n"has, comma","say ""hi"""\r\n,"line\nbreak"\r\n');
+  });
+});
+
+describe('audit display helpers', () => {
+  it('labels every audit action', () => {
+    expect(Object.keys(AUDIT_ACTION_LABEL)).toHaveLength(8);
+    expect(AUDIT_ACTION_LABEL.CAMPAIGN_DISPATCHED).toBe('Sent scheduled campaign');
+  });
+
+  it('builds initials', () => {
+    expect(initials('Jordan Reyes')).toBe('JR');
+    expect(initials('Demo  Staff')).toBe('DS');
+    expect(initials('Scheduler')).toBe('S');
+    expect(initials(' ')).toBe('?');
+  });
+
+  it('formats relative times both ways', () => {
+    const now = Date.parse('2026-10-23T14:00:00Z');
+    expect(timeAgo('2026-10-23T13:59:40Z', now)).toBe('just now');
+    expect(timeAgo('2026-10-23T13:55:00Z', now)).toBe('5 min ago');
+    expect(timeAgo('2026-10-23T11:00:00Z', now)).toBe('3 h ago');
+    expect(timeAgo('2026-10-22T14:00:00Z', now)).toBe('1 day ago');
+    expect(timeAgo('2026-10-20T14:00:00Z', now)).toBe('3 days ago');
+    expect(timeAgo('2026-10-23T14:04:00Z', now)).toBe('in 4 min');
   });
 });

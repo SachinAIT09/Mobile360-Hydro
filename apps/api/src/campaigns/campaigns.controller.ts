@@ -25,12 +25,15 @@ import type {
   Campaign,
   CampaignAudience,
   CampaignCreateRequest,
+  CampaignDetail,
   CampaignSegment,
   CampaignType,
   CampaignVariantCopy,
   VariantId,
 } from '@demo/shared';
-import { Roles } from '../auth/auth.js';
+import { actorFromUser } from '../audit/audit.service.js';
+import { CurrentUser, Roles, type RequestUser } from '../auth/auth.js';
+import { Db } from '../db/db.service.js';
 import { CampaignsService } from './campaigns.service.js';
 
 class AudienceDto {
@@ -108,7 +111,10 @@ const toAudience = (a: AudienceDto): CampaignAudience =>
 @Roles('STAFF')
 @Controller('campaigns')
 export class CampaignsController {
-  constructor(private readonly campaigns: CampaignsService) {}
+  constructor(
+    private readonly campaigns: CampaignsService,
+    private readonly db: Db,
+  ) {}
 
   @Get()
   list(): Promise<Campaign[]> {
@@ -126,8 +132,21 @@ export class CampaignsController {
     return this.campaigns.get(id);
   }
 
+  /** Campaign + DR event + audit trail + timeline for the detail page. */
+  @Get(':id/detail')
+  detail(@Param('id') id: string): Promise<CampaignDetail> {
+    return this.campaigns.detail(id);
+  }
+
+  /** Cancel a SCHEDULED campaign (409 once it is sending or sent). */
+  @Post(':id/cancel')
+  async cancel(@Param('id') id: string, @CurrentUser() user: RequestUser | null): Promise<Campaign> {
+    return this.campaigns.cancel(id, await actorFromUser(this.db, user));
+  }
+
+  /** Send now (or a test send), or schedule with schedule.sendNow=false + schedule.sendAt (now + 1 min … now + 24 h). */
   @Post()
-  create(@Body() body: CreateCampaignDto): Promise<Campaign> {
+  async create(@Body() body: CreateCampaignDto, @CurrentUser() user: RequestUser | null): Promise<Campaign> {
     const req: CampaignCreateRequest = {
       type: body.type,
       audience: toAudience(body.audience),
@@ -140,6 +159,6 @@ export class CampaignsController {
       testCustomerId: body.testCustomerId,
       variants: body.variants?.length === 2 ? [{ ...body.variants[0] }, { ...body.variants[1] }] : undefined,
     };
-    return this.campaigns.create(req);
+    return this.campaigns.create(req, await actorFromUser(this.db, user));
   }
 }

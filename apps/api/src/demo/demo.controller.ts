@@ -3,7 +3,8 @@ import { IsBoolean, IsOptional } from 'class-validator';
 import type { Request } from 'express';
 import QRCode from 'qrcode';
 import type { DemoPhone, DemoResetRequest, DemoState } from '@demo/shared';
-import { Roles } from '../auth/auth.js';
+import { AuditService, actorFromUser } from '../audit/audit.service.js';
+import { CurrentUser, Roles, type RequestUser } from '../auth/auth.js';
 import { config } from '../config.js';
 import { nextEventWindow } from '../common/time.js';
 import { QR_OPTIONS } from '../static.js';
@@ -29,6 +30,7 @@ export class DemoController {
     private readonly realtime: RealtimeService,
     private readonly seed: SeedService,
     private readonly scheduler: SimulationScheduler,
+    private readonly audit: AuditService,
   ) {}
 
   @Get('state')
@@ -78,10 +80,14 @@ export class DemoController {
    * with keepSessions (default) customers stay signed in; keepSessions=false asks them to sign out.
    */
   @Post('reset')
-  async reset(@Body() body: DemoResetDto): Promise<{ ok: true }> {
+  async reset(@Body() body: DemoResetDto, @CurrentUser() user: RequestUser | null): Promise<{ ok: true }> {
     const keepSessions = body?.keepSessions ?? true;
+    // Resolve the actor before the users collection is dropped (demo ids are stable, but be safe).
+    const actor = await actorFromUser(this.db, user);
     this.scheduler.clearAll();
     await this.seed.reset();
+    // The reseed wiped the log and wrote the historical entries; record who reset it on top.
+    await this.audit.record(actor, 'DEMO_RESET', { kind: 'demo', id: null, label: 'Demo data' }, 'Reset the demo: data reseeded, scheduled sends and simulations cleared');
     this.realtime.toAll('demo:reset', { keepSessions });
     return { ok: true };
   }

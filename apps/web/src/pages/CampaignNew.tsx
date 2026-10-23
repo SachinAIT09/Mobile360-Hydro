@@ -10,13 +10,17 @@ import {
   type Campaign,
   type CampaignAudience,
   type CampaignChannels,
+  type CampaignCreateRequest,
   type CampaignExclusions,
   type CampaignSegment,
   type CampaignType,
   type DrEventStatus,
+  type VariantId,
 } from '@demo/shared';
 import { MOBILE_WEB_URL, useApi, useLoad, useSocketEvent } from '../lib/client';
 import { upcomingWindow } from '../lib/window';
+import { MAX_FEEDERS, fmtSendAt, fromLocalInput, parseDraftParams, quickTimes, sendAtError, toLocalInput } from '../lib/campaignDraft';
+import { abVerdict, isAb, variantRows } from '../lib/abStats';
 import { PageHeader } from '../components/PageHeader';
 import { Icon } from '../components/icons';
 
@@ -77,33 +81,41 @@ const SEGMENT_LABEL: Record<CampaignSegment, string> = {
 
 const MERGE_FIELDS = ['{first_name}', '{incentive}', '{event_window}', '{neighbours_enrolled}'];
 
-function isType(v: string | null): v is CampaignType {
-  return v === 'ENROLL_OFFER' || v === 'STOP_CHARGING';
-}
-function isSegment(v: string | null): v is CampaignSegment {
-  return v === 'UNENROLLED_EV' || v === 'ENROLLED_EV';
+interface Copy {
+  title: string;
+  body: string;
+  cta: string;
 }
 
 export function CampaignNewPage() {
   const api = useApi();
   const navigate = useNavigate();
   const [params] = useSearchParams();
-  const qType = params.get('type');
-  const qSegment = params.get('segment');
-  const qFeeder = params.get('feeder');
-  const qLive = params.get('liveEventId');
+  // The page remounts when the query changes (CampaignKeyed), so the draft is read once.
+  const draft = useMemo(() => parseDraftParams(params), [params]);
+  const qFeeder = draft.feeders.length === 1 ? draft.feeders[0] : draft.feeder;
+  const qLive = draft.liveEventId;
 
-  const initialType: CampaignType = isType(qType) ? qType : 'ENROLL_OFFER';
+  const initialType: CampaignType = draft.type ?? 'ENROLL_OFFER';
+  const d0 = DEFAULTS[initialType];
+  const initialA: Copy = { title: draft.copyA.title ?? d0.title, body: draft.copyA.body ?? d0.body, cta: draft.copyA.cta ?? d0.cta };
   const [type, setType] = useState<CampaignType>(initialType);
-  const [segment, setSegment] = useState<CampaignSegment>(isSegment(qSegment) ? qSegment : DEFAULTS[initialType].segment);
+  const [segment, setSegment] = useState<CampaignSegment>(draft.segment ?? d0.segment);
   /** Either a feeder code or `live:<liveEventId>`. */
   const [audienceKey, setAudienceKey] = useState<string>(qLive ? `live:${qLive}` : qFeeder || 'SUB-01-F1');
+  /** Multi-feeder audience (chips); null while a single feeder / live event is selected. */
+  const [multi, setMulti] = useState<string[] | null>(draft.feeders.length >= 2 ? draft.feeders : null);
   const [exclusions, setExclusions] = useState<CampaignExclusions>({ optedOut: true, contactedLast7Days: true, lifeSupport: true });
-  const [title, setTitle] = useState(DEFAULTS[initialType].title);
-  const [body, setBody] = useState(DEFAULTS[initialType].body);
-  const [cta, setCta] = useState(DEFAULTS[initialType].cta);
-  const [channels, setChannels] = useState<CampaignChannels>({ push: true, inApp: true, sms: DEFAULTS[initialType].sms, email: false });
-  const [expiresInHours, setExpiresInHours] = useState(DEFAULTS[initialType].expiresInHours);
+  const [copies, setCopies] = useState<Record<VariantId, Copy>>({
+    A: initialA,
+    B: { title: draft.copyB?.title ?? initialA.title, body: draft.copyB?.body ?? initialA.body, cta: draft.copyB?.cta ?? initialA.cta },
+  });
+  const [abOn, setAbOn] = useState(draft.copyB !== null);
+  const [variant, setVariant] = useState<VariantId>('A');
+  const [channels, setChannels] = useState<CampaignChannels>({ push: true, inApp: true, sms: d0.sms, email: false });
+  const [expiresInHours, setExpiresInHours] = useState(d0.expiresInHours);
+  const [when, setWhen] = useState<'now' | 'later'>('now');
+  const [sendAt, setSendAt] = useState<Date | null>(null);
 
   const [preview, setPreview] = useState<AudiencePreview | null>(null);
   const [previewErr, setPreviewErr] = useState<string | null>(null);
@@ -112,6 +124,7 @@ export function CampaignNewPage() {
   const [sent, setSent] = useState<Campaign | null>(null);
   const [drStatus, setDrStatus] = useState<DrEventStatus | null>(null);
   const [drBusy, setDrBusy] = useState(false);
+  const [cancelBusy, setCancelBusy] = useState(false);
 
   const titleRef = useRef<HTMLInputElement>(null);
   const bodyRef = useRef<HTMLTextAreaElement>(null);
@@ -121,21 +134,31 @@ export function CampaignNewPage() {
   const live = useLoad((a) => a.liveEvents());
   const demo = useLoad((a) => a.demoState());
 
+  const active = abOn ? variant : 'A';
+  const copy = copies[active];
+  const setCopy = (patch: Partial<Copy>) => setCopies((c) => ({ ...c, [active]: { ...c[active], ...patch } }));
+
   const liveEvent = qLive ? live.data?.find((e) => e.id === qLive) : undefined;
-  const audience: CampaignAudience = audienceKey.startsWith('live:')
-    ? { kind: 'LIVE_EVENT', liveEventId: audienceKey.slice(5), segment }
-    : { kind: 'FEEDER', feederCode: audienceKey, segment };
-  const feederCode = audience.kind === 'FEEDER' ? audience.feederCode : liveEvent?.substationCode ?? 'SUB-01';
+  const audience: CampaignAudience =
+    multi && multi.length >= 2
+      ? { kind: 'FEEDERS', feederCodes: multi, segment }
+      : audienceKey.startsWith('live:')
+        ? { kind: 'LIVE_EVENT', liveEventId: audienceKey.slice(5), segment }
+        : { kind: 'FEEDER', feederCode: audienceKey, segment };
+  const feederCode =
+    audience.kind === 'FEEDER' ? audience.feederCode : audience.kind === 'FEEDERS' ? audience.feederCodes[0] : liveEvent?.substationCode ?? 'SUB-01';
   const feederStat = feeders.data?.find((f) => f.code === feederCode);
 
   const feederOptions = useMemo(() => {
     const list = (feeders.data ?? []).map((f) => ({ value: f.code, label: `${f.code} (${f.evs} EVs)` }));
-    if (qFeeder && !list.some((o) => o.value === qFeeder)) {
-      list.push({ value: qFeeder, label: feeders.data ? `${qFeeder} (sample, no premise data)` : qFeeder });
+    for (const extra of [qFeeder, ...draft.feeders]) {
+      if (extra && !list.some((o) => o.value === extra)) {
+        list.push({ value: extra, label: feeders.data ? `${extra} (sample, no premise data)` : extra });
+      }
     }
     if (list.length === 0) list.push({ value: 'SUB-01-F1', label: 'SUB-01-F1' });
     return list;
-  }, [feeders.data, qFeeder]);
+  }, [feeders.data, qFeeder, draft.feeders]);
 
   // Live audience count (debounced).
   const audienceSig = JSON.stringify({ audience, exclusions });
@@ -166,6 +189,11 @@ export function CampaignNewPage() {
   useSocketEvent('campaign:statsChanged', (c) => {
     if (sent && c.id === sent.id) setSent(c);
   });
+  useSocketEvent('campaign:statusChanged', (c) => {
+    if (!sent || c.id !== sent.id) return;
+    setSent(c);
+    if (c.drEventId && !drStatus) setDrStatus('SCHEDULED');
+  });
   useSocketEvent('drEvent:statusChanged', (e) => {
     if (sent && e.id === sent.drEventId) setDrStatus(e.status);
   });
@@ -182,9 +210,8 @@ export function CampaignNewPage() {
     const d = DEFAULTS[t];
     setType(t);
     setSegment(d.segment);
-    setTitle(d.title);
-    setBody(d.body);
-    setCta(d.cta);
+    const fresh = { title: d.title, body: d.body, cta: d.cta };
+    setCopies({ A: fresh, B: { ...fresh } });
     setChannels((c) => ({ ...c, sms: d.sms }));
     setExpiresInHours(d.expiresInHours);
     setSent(null);
@@ -193,19 +220,45 @@ export function CampaignNewPage() {
   }
 
   function insertMerge(field: string) {
-    const target = lastFocus.current === 'title' ? titleRef.current : bodyRef.current;
-    const value = lastFocus.current === 'title' ? title : body;
-    const setter = lastFocus.current === 'title' ? setTitle : setBody;
+    const which = lastFocus.current;
+    const target = which === 'title' ? titleRef.current : bodyRef.current;
+    const value = copy[which];
     const start = target?.selectionStart ?? value.length;
     const end = target?.selectionEnd ?? value.length;
-    const next = value.slice(0, start) + field + value.slice(end);
-    setter(next);
+    setCopy({ [which]: value.slice(0, start) + field + value.slice(end) });
     window.requestAnimationFrame(() => {
       if (!target) return;
       target.focus();
       const pos = start + field.length;
       target.setSelectionRange(pos, pos);
     });
+  }
+
+  // ---- multi-feeder chips
+  const singleFeeder = audience.kind === 'FEEDER' ? audience.feederCode : null;
+  const unusedFeeders = feederOptions.filter((o) => !(multi ?? [singleFeeder]).includes(o.value));
+  function addFeeder(code?: string) {
+    const next = code ?? unusedFeeders[0]?.value;
+    if (!next) return;
+    setMulti((m) => {
+      const base = m ?? (singleFeeder ? [singleFeeder] : []);
+      return base.includes(next) || base.length >= MAX_FEEDERS ? base : [...base, next];
+    });
+  }
+  function removeFeeder(code: string) {
+    const rest = (multi ?? []).filter((c) => c !== code);
+    if (rest.length <= 1) {
+      setMulti(null);
+      if (rest[0]) setAudienceKey(rest[0]);
+    } else {
+      setMulti(rest);
+    }
+  }
+
+  // ---- schedule
+  function pickWhen(w: 'now' | 'later') {
+    setWhen(w);
+    if (w === 'later' && !sendAt) setSendAt(quickTimes()[0].at);
   }
 
   const demoUnenrolled = demo.data?.customers.find((c) => c.role === 'UNENROLLED_DEMO');
@@ -227,17 +280,27 @@ export function CampaignNewPage() {
       setSendErr('Demo customers are not loaded yet.');
       return;
     }
+    const scheduling = !test && when === 'later';
+    if (scheduling) {
+      const err = sendAtError(sendAt);
+      if (err) {
+        setSendErr(err);
+        return;
+      }
+    }
+    const variants: CampaignCreateRequest['variants'] = abOn ? [{ id: 'A', ...copies.A }, { id: 'B', ...copies.B }] : undefined;
     setSending(test ? 'test' : 'all');
     try {
       const c = await api.createCampaign({
         type,
         audience,
         exclusions,
-        title,
-        body,
-        cta,
+        title: copies.A.title,
+        body: copies.A.body,
+        cta: copies.A.cta,
         channels,
-        schedule: { sendNow: true, expiresInHours },
+        schedule: scheduling && sendAt ? { sendNow: false, sendAt: sendAt.toISOString(), expiresInHours } : { sendNow: true, expiresInHours },
+        variants,
         ...(test && testCustomer ? { testCustomerId: testCustomer.customerId } : {}),
       });
       setSent(c);
@@ -246,6 +309,18 @@ export function CampaignNewPage() {
       setSendErr(e instanceof ApiError || e instanceof Error ? e.message : 'Send failed');
     } finally {
       setSending(null);
+    }
+  }
+
+  async function cancelScheduled() {
+    if (!sent) return;
+    setCancelBusy(true);
+    try {
+      setSent(await api.cancelCampaign(sent.id));
+    } catch (e) {
+      setSendErr(e instanceof Error ? e.message : 'Could not cancel');
+    } finally {
+      setCancelBusy(false);
     }
   }
 
@@ -268,7 +343,9 @@ export function CampaignNewPage() {
       ? liveEvent
         ? `the “${liveEvent.headline}” event on ${liveEvent.substationCode}`
         : `a live ${BRAND.partners.evDetection} event`
-      : audience.feederCode;
+      : audience.kind === 'FEEDERS'
+        ? audience.feederCodes.join(', ')
+        : audience.feederCode;
   const inAppRoute = sent
     ? sent.type === 'STOP_CHARGING'
       ? sent.drEventId
@@ -278,6 +355,17 @@ export function CampaignNewPage() {
         ? `/messages/${sent.demoMessageId}`
         : null
     : null;
+  const scheduled = sent?.status === 'SCHEDULED' || sent?.status === 'SENDING';
+  const stepTitle = !sent ? 'Compose' : sent.status === 'SCHEDULED' ? 'Scheduled' : sent.status === 'CANCELLED' ? 'Cancelled' : 'Sent';
+  const presets = when === 'later' ? quickTimes() : [];
+  const primaryLabel =
+    sending === 'all'
+      ? when === 'later'
+        ? 'Scheduling…'
+        : 'Sending…'
+      : when === 'later'
+        ? `Schedule for ${sendAt ? fmtSendAt(sendAt) : '…'}`
+        : `Send to ${count === null ? '…' : fmtInt(count)} customers`;
 
   return (
     <main className="page" style={{ gap: 18 }}>
@@ -293,6 +381,13 @@ export function CampaignNewPage() {
         </p>
       </div>
 
+      {draft.fromAssistant && (
+        <div className="notice info row center gap8" role="note">
+          <Icon name="sparkle" size={16} />
+          Copy drafted by the scripted assistant. Review before sending.
+        </div>
+      )}
+
       <div className="tabs" role="tablist" aria-label="Campaign type">
         {(Object.keys(DEFAULTS) as CampaignType[]).map((t) => (
           <button key={t} type="button" role="tab" aria-selected={t === type} className={`tab ${t === type ? 'on' : ''}`} onClick={() => switchType(t)}>
@@ -304,7 +399,7 @@ export function CampaignNewPage() {
 
       <section className="three" style={{ gap: 18 }}>
         <div className="stack gap14" style={{ flex: '999 1 600px', minWidth: 0 }}>
-          <StepBar step={sent ? 3 : 2} title={sent ? 'Sent' : 'Compose'} />
+          <StepBar step={sent ? 3 : 2} title={stepTitle} />
           <div className="card pad stack gap12">
             <div className="card-head">
               <span className="stepnum">1</span>
@@ -323,21 +418,60 @@ export function CampaignNewPage() {
                   <option>{DEFAULTS[type].trigger}</option>
                 </select>
               </label>
-              <label className="field">
-                <span className="lbl">{audience.kind === 'LIVE_EVENT' ? 'AUDIENCE SOURCE' : 'FEEDER'}</span>
-                <select className="fld" value={audienceKey} onChange={(e) => setAudienceKey(e.target.value)}>
-                  {qLive && (
-                    <option value={`live:${qLive}`}>
-                      {liveEvent ? `Live event: ${liveEvent.headline} (${liveEvent.substationCode})` : `Live ${BRAND.partners.evDetection} event`}
-                    </option>
+              {multi ? (
+                <div className="field" role="group" aria-label="Feeders">
+                  <span className="lbl">FEEDERS ({multi.length})</span>
+                  <div className="row gap6" style={{ flexWrap: 'wrap' }}>
+                    {multi.map((code) => (
+                      <button
+                        key={code}
+                        type="button"
+                        className="chip row center gap6"
+                        style={{ minHeight: 44 }}
+                        aria-label={`Remove ${code}`}
+                        title={`Remove ${code}`}
+                        onClick={() => removeFeeder(code)}
+                      >
+                        {code}
+                        <span aria-hidden="true">×</span>
+                      </button>
+                    ))}
+                  </div>
+                  {multi.length < MAX_FEEDERS && unusedFeeders.length > 0 && (
+                    <select className="fld" aria-label="Add another feeder" value="" onChange={(e) => e.target.value && addFeeder(e.target.value)}>
+                      <option value="">+ Add feeder…</option>
+                      {unusedFeeders.map((o) => (
+                        <option key={o.value} value={o.value}>
+                          {o.label}
+                        </option>
+                      ))}
+                    </select>
                   )}
-                  {feederOptions.map((o) => (
-                    <option key={o.value} value={o.value}>
-                      {o.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
+                </div>
+              ) : (
+                <div className="field">
+                  <label className="field">
+                    <span className="lbl">{audience.kind === 'LIVE_EVENT' ? 'AUDIENCE SOURCE' : 'FEEDER'}</span>
+                    <select className="fld" value={audienceKey} onChange={(e) => setAudienceKey(e.target.value)}>
+                      {qLive && (
+                        <option value={`live:${qLive}`}>
+                          {liveEvent ? `Live event: ${liveEvent.headline} (${liveEvent.substationCode})` : `Live ${BRAND.partners.evDetection} event`}
+                        </option>
+                      )}
+                      {feederOptions.map((o) => (
+                        <option key={o.value} value={o.value}>
+                          {o.label}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  {audience.kind === 'FEEDER' && unusedFeeders.length > 0 && (
+                    <button type="button" className="btn outline sm" style={{ alignSelf: 'flex-start', minHeight: 44 }} onClick={() => addFeeder()}>
+                      + Add feeder
+                    </button>
+                  )}
+                </div>
+              )}
               <label className="field">
                 <span className="lbl">SEGMENT</span>
                 <select className="fld" value={segment} onChange={(e) => setSegment(e.target.value as CampaignSegment)}>
@@ -378,21 +512,53 @@ export function CampaignNewPage() {
             <div className="card-head">
               <span className="stepnum">2</span>
               <h2 className="h2">Message</h2>
+              <label className="chk" style={{ marginLeft: 'auto' }}>
+                <input
+                  type="checkbox"
+                  checked={abOn}
+                  onChange={(e) => {
+                    setAbOn(e.target.checked);
+                    setVariant('A');
+                  }}
+                />
+                A/B test
+              </label>
             </div>
+            {abOn && (
+              <>
+                <div className="tabs" role="tablist" aria-label="Message variant">
+                  {(['A', 'B'] as const).map((v) => (
+                    <button
+                      key={v}
+                      type="button"
+                      role="tab"
+                      aria-selected={v === variant}
+                      className={`tab ${v === variant ? 'on' : ''}`}
+                      style={{ minWidth: 0, flex: '1 1 160px' }}
+                      onClick={() => setVariant(v)}
+                    >
+                      <span className="tl">Variant {v}</span>
+                      <span className="ts">{v === 'A' ? 'Demo customers always get A' : 'About half of the other customers'}</span>
+                    </button>
+                  ))}
+                </div>
+                <p className="small muted">Recipients are split about 50/50. Results per variant update live; a leader is called after 20+ sends each and a 3-point lead.</p>
+              </>
+            )}
             <label className="field">
-              <span className="lbl">TITLE</span>
+              <span className="lbl">TITLE{abOn ? ` · VARIANT ${active}` : ''}</span>
               <input
                 ref={titleRef}
                 className="fld"
                 type="text"
-                value={title}
+                value={copy.title}
                 onFocus={() => (lastFocus.current = 'title')}
-                onChange={(e) => setTitle(e.target.value)}
+                onChange={(e) => setCopy({ title: e.target.value })}
               />
             </label>
             <label className="field">
-              <span className="lbl">BODY</span>
-              <textarea ref={bodyRef} className="fld" value={body} onFocus={() => (lastFocus.current = 'body')} onChange={(e) => setBody(e.target.value)} />
+              <span className="lbl">BODY{abOn ? ` · VARIANT ${active}` : ''}</span>
+              <textarea ref={bodyRef} className="fld" value={copy.body} onFocus={() => (lastFocus.current = 'body')} onChange={(e) => setCopy({ body: e.target.value })} />
             </label>
             <div className="row gap8 center" style={{ fontSize: 13, color: 'var(--muted)' }}>
               Insert:
@@ -410,8 +576,8 @@ export function CampaignNewPage() {
               ))}
             </div>
             <label className="field" style={{ maxWidth: 320 }}>
-              <span className="lbl">BUTTON</span>
-              <input className="fld" type="text" value={cta} onChange={(e) => setCta(e.target.value)} />
+              <span className="lbl">BUTTON{abOn ? ` · VARIANT ${active}` : ''}</span>
+              <input className="fld" type="text" value={copy.cta} onChange={(e) => setCopy({ cta: e.target.value })} />
             </label>
           </div>
 
@@ -447,13 +613,41 @@ export function CampaignNewPage() {
               </legend>
               <div style={{ clear: 'both' }} />
               <label className="chk">
-                <input type="radio" name="when" defaultChecked />
+                <input type="radio" name="when" checked={when === 'now'} onChange={() => pickWhen('now')} />
                 {type === 'STOP_CHARGING' ? `Send now (event ${fmtWindow(win.start, win.end)})` : 'Send now'}
               </label>
-              <label className="chk" title="Scheduling is not part of this demo">
-                <input type="radio" name="when" disabled />
-                <span className="muted">Schedule for later (not in demo)</span>
+              <label className="chk">
+                <input type="radio" name="when" checked={when === 'later'} onChange={() => pickWhen('later')} />
+                Schedule for later
               </label>
+              {when === 'later' && (
+                <div className="stack gap8" style={{ paddingLeft: 28 }}>
+                  <div className="row gap6" style={{ flexWrap: 'wrap' }} role="group" aria-label="Quick send times">
+                    {presets.map((p) => (
+                      <button
+                        key={p.label}
+                        type="button"
+                        className="chip"
+                        style={{ minHeight: 44, fontFamily: 'inherit' }}
+                        aria-pressed={!!sendAt && Math.abs(sendAt.getTime() - p.at.getTime()) < 60_000}
+                        onClick={() => setSendAt(p.at)}
+                      >
+                        {p.label}
+                      </button>
+                    ))}
+                  </div>
+                  <label className="field">
+                    <span className="lbl">SEND AT ({type === 'STOP_CHARGING' ? 'event window is set when it sends' : 'within 24 hours'})</span>
+                    <input
+                      className="fld"
+                      type="datetime-local"
+                      value={sendAt ? toLocalInput(sendAt) : ''}
+                      onChange={(e) => setSendAt(fromLocalInput(e.target.value))}
+                    />
+                  </label>
+                  <p className="small muted">The audience is counted again when it sends.</p>
+                </div>
+              )}
               <label className="field">
                 <span className="lbl">EXPIRES</span>
                 <select className="fld" value={expiresInHours} onChange={(e) => setExpiresInHours(Number(e.target.value))}>
@@ -473,10 +667,14 @@ export function CampaignNewPage() {
             </div>
           )}
           {sent && (
-            <div className="notice ok" role="status">
-              {sent.isTest
-                ? `Test sent to ${testCustomer?.firstName ?? 'the demo customer'}. Check the phone.`
-                : `Sent to ${fmtInt(sent.stats.targeted)} customers (${sent.audienceLabel}). Results update live on the right.`}
+            <div className={`notice ${sent.status === 'CANCELLED' ? 'info' : 'ok'}`} role="status">
+              {sent.status === 'SCHEDULED' || sent.status === 'SENDING'
+                ? `Scheduled · sends at ${fmtSendAt(new Date(sent.scheduledFor ?? sent.sentAt))} (${sent.audienceLabel}).`
+                : sent.status === 'CANCELLED'
+                  ? 'Scheduled send cancelled. Nothing was sent.'
+                  : sent.isTest
+                    ? `Test sent to ${testCustomer?.firstName ?? 'the demo customer'}. Check the phone.`
+                    : `Sent to ${fmtInt(sent.stats.targeted)} customers (${sent.audienceLabel}). Results update live on the right.`}
             </div>
           )}
           <div className="row gap10" style={{ justifyContent: 'flex-end' }}>
@@ -496,9 +694,14 @@ export function CampaignNewPage() {
               <Icon name="phone" size={16} />
               {sending === 'test' ? 'Sending…' : `Send test to me${testCustomer ? ` (${testCustomer.firstName})` : ''}`}
             </button>
-            <button type="button" className="btn pri lg" disabled={sending !== null || !count} onClick={() => void send(false)}>
-              <Icon name="send" size={16} />
-              {sending === 'all' ? 'Sending…' : `Send to ${count === null ? '…' : fmtInt(count)} customers`}
+            <button
+              type="button"
+              className="btn pri lg"
+              disabled={sending !== null || (when === 'now' ? !count : !sendAt)}
+              onClick={() => void send(false)}
+            >
+              <Icon name={when === 'later' ? 'clock' : 'send'} size={16} />
+              {primaryLabel}
             </button>
           </div>
         </div>
@@ -509,16 +712,16 @@ export function CampaignNewPage() {
               <span className="ic-tile accent">
                 <Icon name="phone" size={18} />
               </span>
-              <h2 className="h2">Preview on phone</h2>
+              <h2 className="h2">Preview on phone{abOn ? ` · Variant ${active}` : ''}</h2>
             </div>
-            <div className="phone" aria-label="Push notification preview">
+            <div className="phone" aria-label={`Push notification preview${abOn ? `, variant ${active}` : ''}`}>
               <div className="push">
                 <span className="row between muted" style={{ fontSize: 11 }}>
                   <span>{BRAND.utilityName.toUpperCase()}</span>
                   <span>now</span>
                 </span>
-                <strong>{resolve(title) || 'Title'}</strong>
-                <span>{truncate(resolve(body), 110) || 'Message body'}</span>
+                <strong>{resolve(copy.title) || 'Title'}</strong>
+                <span>{truncate(resolve(copy.body), 110) || 'Message body'}</span>
               </div>
             </div>
             {inAppRoute ? (
@@ -528,12 +731,38 @@ export function CampaignNewPage() {
               </a>
             ) : (
               <span className="small muted">
-                {sent ? 'The demo customer is not in this audience.' : 'In-app screen opens here after you send.'}
+                {sent && sent.status === 'SENT' ? 'The demo customer is not in this audience.' : 'In-app screen opens here after you send.'}
               </span>
             )}
           </div>
 
-          <ResultsPanel type={type} sent={sent} />
+          {scheduled && sent ? (
+            <div className="card pad stack gap10" aria-live="polite">
+              <div className="card-head">
+                <span className="ic-tile">
+                  <Icon name="clock" size={18} />
+                </span>
+                <h2 className="h2" style={{ fontSize: 15 }}>
+                  {sent.status === 'SENDING' ? 'Sending now…' : `Scheduled · sends at ${fmtSendAt(new Date(sent.scheduledFor ?? sent.sentAt))}`}
+                </h2>
+                <span className="pill grey">{sent.status === 'SENDING' ? 'Sending' : 'Scheduled'}</span>
+              </div>
+              <p className="small muted">Results appear here once it goes out. The audience and the event window are worked out at send time.</p>
+              <div className="row gap8">
+                {sent.status === 'SCHEDULED' && (
+                  <button type="button" className="btn outline" disabled={cancelBusy} onClick={() => void cancelScheduled()}>
+                    <Icon name="stop" size={16} />
+                    Cancel
+                  </button>
+                )}
+                <Link className="btn sec" to={`/campaigns/${sent.id}`}>
+                  View campaign
+                </Link>
+              </div>
+            </div>
+          ) : (
+            <ResultsPanel type={type} sent={sent && sent.status === 'SENT' ? sent : null} />
+          )}
 
           {sent && sent.type === 'STOP_CHARGING' && sent.drEventId && (
             <div className="card pad stack gap10">
@@ -620,6 +849,7 @@ function ResultsPanel({ type, sent }: { type: CampaignType; sent: Campaign | nul
           { v: `${sent.stats.peakReducedMw.toFixed(2)} MW`, l: 'Peak reduced' },
         ]
     : null;
+  const ab = sent && isAb(sent) ? variantRows(sent) : null;
   return (
     <div className="card pad stack gap10" aria-live="polite">
       <div className="card-head">
@@ -641,6 +871,38 @@ function ResultsPanel({ type, sent }: { type: CampaignType; sent: Campaign | nul
       </div>
       {sent && sent.type === 'ENROLL_OFFER' && sent.stats.declined > 0 && <span className="small muted">{sent.stats.declined} declined</span>}
       {sent && sent.type === 'STOP_CHARGING' && sent.stats.optedOut > 0 && <span className="small muted">{sent.stats.optedOut} opted out of this event</span>}
+      {sent && ab && (
+        <div className="stack gap8" aria-label="Results by variant">
+          <div className="row between center">
+            <strong style={{ fontSize: 14, color: 'var(--navy)' }}>A/B results</strong>
+            {sent.winner ? <span className="pill ok">Variant {sent.winner} leading</span> : <span className="pill grey">Too early to call</span>}
+          </div>
+          <div className="statgrid">
+            {ab.map((r) => (
+              <div key={r.id} className="stat">
+                <span className="row center gap6">
+                  <strong style={{ fontSize: 15 }}>Variant {r.id}</strong>
+                  {r.leading && <span className="pill ok">Leading</span>}
+                </span>
+                {r.stages.slice(1).map((s) => (
+                  <span key={s.label}>
+                    {s.label}: {fmtInt(s.count)}
+                  </span>
+                ))}
+                <span>
+                  {r.keyLabel}: <strong style={{ fontSize: 13 }}>{r.keyRate.toFixed(1)}%</strong>
+                </span>
+              </div>
+            ))}
+          </div>
+          <span className="small muted">{abVerdict(sent)}. Variant B responses are simulated at a slightly different rate (synthetic).</span>
+        </div>
+      )}
+      {sent && !sent.isTest && (
+        <Link to={`/campaigns/${sent.id}`} className="linkbtn" style={{ alignSelf: 'flex-start' }}>
+          Open campaign details
+        </Link>
+      )}
     </div>
   );
 }

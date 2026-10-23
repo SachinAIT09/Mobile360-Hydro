@@ -5,14 +5,19 @@ import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
 export class SimulationScheduler implements OnModuleDestroy {
   private readonly timers = new Set<NodeJS.Timeout>();
   private readonly log = new Logger('Simulation');
-  private generation = 0;
+  private gen = 0;
+
+  /** Bumped by every demo reset; long-running work compares it to know it has been superseded. */
+  get generation(): number {
+    return this.gen;
+  }
 
   /** Run `fn` after `ms`, unless the demo is reset first. */
   later(ms: number, fn: () => Promise<void> | void) {
-    const gen = this.generation;
+    const gen = this.gen;
     const t = setTimeout(() => {
       this.timers.delete(t);
-      if (gen !== this.generation) return;
+      if (gen !== this.gen) return;
       Promise.resolve()
         .then(fn)
         .catch((e: unknown) => this.log.warn(`simulation step failed: ${(e as Error).message}`));
@@ -21,7 +26,7 @@ export class SimulationScheduler implements OnModuleDestroy {
   }
 
   clearAll() {
-    this.generation++;
+    this.gen++;
     for (const t of this.timers) clearTimeout(t);
     this.timers.clear();
   }

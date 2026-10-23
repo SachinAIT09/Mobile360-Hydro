@@ -86,3 +86,69 @@ export async function openInbox(mob: Page) {
 export function mobileRoute(path: string) {
   return `${urls.MOB}${path}`;
 }
+
+// ---------------------------------------------------------------- campaign power tools (campaignTools.spec.ts)
+
+export interface CampaignFull extends CampaignRow {
+  title: string;
+  status: 'SCHEDULED' | 'SENDING' | 'SENT' | 'CANCELLED';
+  audience: { kind: 'FEEDER' | 'FEEDERS' | 'LIVE_EVENT'; feederCode?: string; feederCodes?: string[]; segment: string };
+  scheduledFor: string | null;
+  createdAt: string;
+  variants: { id: 'A' | 'B'; title: string }[] | null;
+  variantStats: Record<'A' | 'B', CampaignRow['stats']> | null;
+  winner: 'A' | 'B' | null;
+}
+export interface AuditRow {
+  id: string;
+  action: string;
+  actor: { name: string; kind: 'STAFF' | 'SYSTEM' };
+  target: { kind: string; id: string | null; label: string };
+  summary: string;
+}
+export interface DrEventRow {
+  id: string;
+  feederCode: string;
+  feederCodes?: string[];
+  status: 'SCHEDULED' | 'ACTIVE' | 'ENDED';
+  campaignId: string;
+}
+
+export async function campaignById(api: DemoApi, id: string): Promise<CampaignFull> {
+  return api.call<CampaignFull>(`/campaigns/${id}`, 'GET', undefined, await api.staffToken());
+}
+
+/** Newest campaign of any type (full DTO). */
+export async function newestCampaign(api: DemoApi): Promise<CampaignFull> {
+  const deadline = Date.now() + 15_000;
+  for (;;) {
+    const rows = await api.call<CampaignFull[]>('/campaigns', 'GET', undefined, await api.staffToken());
+    const sorted = [...rows].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+    if (sorted.length > 0) return sorted[0];
+    if (Date.now() > deadline) throw new Error('No campaign yet');
+    await new Promise((r) => setTimeout(r, 250));
+  }
+}
+
+/** POST /campaigns as staff (send now, test or schedule). */
+export async function createCampaignViaApi(api: DemoApi, body: Record<string, unknown>): Promise<CampaignFull> {
+  return api.call<CampaignFull>(
+    '/campaigns',
+    'POST',
+    {
+      exclusions: { optedOut: true, contactedLast7Days: true, lifeSupport: true },
+      channels: { push: true, inApp: true, sms: false, email: false },
+      cta: 'Open',
+      ...body,
+    },
+    await api.staffToken(),
+  );
+}
+
+export async function auditLog(api: DemoApi): Promise<AuditRow[]> {
+  return api.call<AuditRow[]>('/audit', 'GET', undefined, await api.staffToken());
+}
+
+export async function drEventsList(api: DemoApi): Promise<DrEventRow[]> {
+  return api.call<DrEventRow[]>('/dr-events', 'GET', undefined, await api.staffToken());
+}

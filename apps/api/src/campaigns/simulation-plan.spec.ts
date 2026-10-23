@@ -73,6 +73,35 @@ describe('planSimulation', () => {
   });
 });
 
+describe('planSimulation rateScale', () => {
+  it('a scale of 1 is identical to the default plan', () => {
+    for (const type of ['ENROLL_OFFER', 'STOP_CHARGING'] as const) {
+      expect(planSimulation(type, targets, SEED, SIMULATION_TICKS, 1)).toEqual(planSimulation(type, targets, SEED));
+    }
+  });
+
+  it('scales the act rate but not delivery or opens', () => {
+    const base = planSimulation('ENROLL_OFFER', targets, SEED);
+    const up = planSimulation('ENROLL_OFFER', targets, SEED, SIMULATION_TICKS, 1.15);
+    const down = planSimulation('ENROLL_OFFER', targets, SEED, SIMULATION_TICKS, 0.85);
+    const opened = (ps: SimulationPlan<unknown>[]) => share(ps, (p) => p.open > 0);
+    expect(Math.abs(opened(up) - 0.62)).toBeLessThan(0.04);
+    expect(Math.abs(opened(down) - 0.62)).toBeLessThan(0.04);
+    const acted = (ps: SimulationPlan<unknown>[]) => share(ps, (p) => p.act > 0);
+    expect(acted(up)).toBeGreaterThan(acted(base));
+    expect(acted(down)).toBeLessThan(acted(base));
+    expect(Math.abs(acted(up) - 0.18 * 1.15)).toBeLessThan(0.03);
+  });
+
+  it('keeps DR responses consistent at high scales', () => {
+    const plans = planSimulation('STOP_CHARGING', targets, SEED, SIMULATION_TICKS, 1.15);
+    expect(plans.every((p) => (p.act > 0) === (p.response !== undefined))).toBe(true);
+    const paused = share(plans, (p) => p.response === 'PAUSE');
+    expect(paused).toBeGreaterThan(0.8);
+    expect(paused).toBeLessThanOrEqual(share(plans, (p) => p.act > 0));
+  });
+});
+
 describe('seedFromId', () => {
   it('uses the last 8 hex digits of an ObjectId', () => {
     expect(seedFromId('66f1a2b3c4d5e6f7a8b9c0d1')).toBe(parseInt('a8b9c0d1', 16));

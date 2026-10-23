@@ -43,9 +43,20 @@ export class DrEventsService {
     };
   }
 
-  async create(input: { feederCode: string; title: string; start: Date; end: Date; campaignId: Types.ObjectId; targets: Types.ObjectId[] }) {
+  async create(input: {
+    feederCode: string;
+    /** Every feeder of a multi-feeder campaign; defaults to [feederCode]. */
+    feederCodes?: string[];
+    title: string;
+    start: Date;
+    end: Date;
+    campaignId: Types.ObjectId;
+    targets: Types.ObjectId[];
+  }) {
+    const feederCodes = [...new Set([input.feederCode, ...(input.feederCodes ?? [])])];
     return this.db.drEvents.create({
       feederCode: input.feederCode,
+      feederCodes,
       title: input.title,
       windowStart: input.start,
       windowEnd: input.end,
@@ -219,6 +230,13 @@ export class DrEventsService {
   async list(): Promise<DrEvent[]> {
     const es = await this.db.drEvents.find().sort({ _id: -1 }).limit(50).lean();
     return es.map((e) => DrEventsService.toDto(e));
+  }
+
+  /** Staff view of one event, or null when it does not exist. */
+  async getDto(id: Types.ObjectId | string | null | undefined): Promise<DrEvent | null> {
+    if (!id || !Types.ObjectId.isValid(String(id))) return null;
+    const e = await this.db.drEvents.findById(String(id)).lean();
+    return e ? DrEventsService.toDto(e) : null;
   }
 
   async loadDoc(id: Types.ObjectId): Promise<DrEventDoc | null> {
