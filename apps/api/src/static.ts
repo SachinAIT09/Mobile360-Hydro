@@ -74,13 +74,12 @@ footer{max-width:880px;margin:0 auto;padding:0 24px 28px;font-size:12px;color:${
 <div class="grid">
 ${card('/staff/feeders', 'Staff app', `Feeder visibility, Campaign 360 and DR events for ${BRAND.utilityName} staff.`, true, hasStaff)}
 ${card('/app/login', 'Customer app', 'The mobile app. Sign in as manny@demo.test or priya@demo.test, any password.', false, hasApp)}
-${card('/staff/demo', 'Demo control panel', `Simulate ${BRAND.partners.evDetection} events and reset the demo.`, false, hasStaff)}
 </div>
 ${hasApp ? `<section class="phone">${qr}<div><strong>Open the customer app on a phone</strong><span>Scan with the phone camera, or open <code>${appUrl}</code>. The phone must be on the same Wi-Fi as this computer, and the firewall must allow port ${new URL(origin).port || '80'}. The phone and the staff app stay in sync through this server.</span></div></section>` : ''}
 <section class="phone" style="display:block"><strong style="font-size:15px">Demo script</strong>
 <ol style="margin-top:10px">
 <li>Open the <strong>Staff app</strong> in one tab and the <strong>Customer app</strong> (Manny) in another tab or on a phone.</li>
-<li><strong>EV detected:</strong> Demo control panel → <em>Simulate EV detected</em> for Manny → pop-up on the phone → enroll. Feeder counts update live.</li>
+<li><strong>EV detected:</strong> Staff app → Demo control panel → <em>Simulate EV detected</em> for Manny → pop-up on the phone → enroll. Feeder counts update live.</li>
 <li><strong>Enrollment offer:</strong> Reset → <em>Simulate 284 EVs stopped charging</em> → Feeder visibility → <em>Target 118 with enrollment offer</em> → Send.</li>
 <li><strong>Stop charging:</strong> sign the phone in as Priya → <em>Simulate forecast high</em> → <em>Send stop-charging request</em> → respond on the phone → <em>End event now</em>.</li>
 </ol></section>

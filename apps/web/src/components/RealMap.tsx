@@ -255,7 +255,19 @@ export default function RealMap({ feeders, selected, onSelect, substationCode, s
   return (
     <div className={`realmap${full ? ' full' : ''}`} role="group" aria-label={`Map of ${substationCode} feeders. Select a feeder label to see its details.`}>
       <div className="fm-stage">
-        <MapContainer ref={mapRef} center={toLL(layout.origin)} zoom={14} scrollWheelZoom={full} style={{ height: full ? '100%' : 480, width: '100%' }} attributionControl zoomSnap={0.5}>
+        {/* Fractional zoom steps so the mouse wheel zooms smoothly instead of jumping whole levels. */}
+        <MapContainer
+          ref={mapRef}
+          center={toLL(layout.origin)}
+          zoom={14}
+          scrollWheelZoom
+          zoomSnap={0.1}
+          zoomDelta={0.5}
+          wheelPxPerZoomLevel={120}
+          wheelDebounceTime={20}
+          style={{ height: full ? '100%' : 480, width: '100%' }}
+          attributionControl
+        >
           <LayersControl position="topright">
             {BASEMAPS.map((b, i) => (
               <LayersControl.BaseLayer key={b.name} name={b.name} checked={i === 0}>
