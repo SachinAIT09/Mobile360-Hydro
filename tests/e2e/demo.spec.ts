@@ -34,7 +34,7 @@ test.describe('Demo controls', () => {
     }
   });
 
-  test('staff: region filter, demo page preflight and presenter bar', async ({ web }) => {
+  test('staff: region filter, demo page quick send and presenter bar', async ({ web }) => {
     await web.goto(`${urls.WEB}/feeders`);
     const region = web.getByLabel(/region/i);
     await expect(region.first()).toBeVisible({ timeout: 20_000 });
@@ -42,8 +42,8 @@ test.describe('Demo controls', () => {
     await expect(web.getByText(/showing \d+ substations? in East/i)).toBeVisible();
 
     await web.goto(`${urls.WEB}/demo`);
-    await expect(web.getByText(/guided script/i).filter({ visible: true }).first()).toBeVisible({ timeout: 20_000 });
-    await expect(web.getByText(/preflight/i).filter({ visible: true }).first()).toBeVisible();
+    await expect(web.getByText(/send to phone/i).filter({ visible: true }).first()).toBeVisible({ timeout: 20_000 });
+    await expect(web.getByText(/guided script|preflight/i).filter({ visible: true })).toHaveCount(0);
     await expect(web.locator('svg').filter({ visible: true }).first()).toBeVisible(); // phone QR
 
     await web.goto(`${urls.WEB}/feeders?presenter=1`);

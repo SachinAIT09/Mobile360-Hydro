@@ -1,15 +1,18 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { Types } from 'mongoose';
-import { PROGRAM, fmtWindow, type LiveEvent } from '@demo/shared';
+import { PROGRAM, fmtWindow, type LiveEvent, type NotifyPreset, type SimNotifyResult } from '@demo/shared';
 import { Db } from '../db/db.service.js';
 import type { CustomerDoc } from '../db/schemas.js';
+import type { AuditActor } from '../audit/audit.service.js';
+import { CampaignsService } from '../campaigns/campaigns.service.js';
 import { prng } from '../common/numbers.js';
-import { addMinutes, fmtClockRange, nextEventWindow } from '../common/time.js';
+import { addMinutes, fmtClock, fmtClockRange, nextEventWindow } from '../common/time.js';
 import { EnrollmentsService } from '../enrollments/enrollments.service.js';
 import { LiveEventsService } from '../live-events/live-events.service.js';
 import { MessagesService } from '../messages/messages.service.js';
 import { RealtimeService } from '../realtime/realtime.service.js';
 import { EvDetectionSource } from './ev-detection-source.js';
+import { CAMPAIGN_COPY, isPlainPreset, notifyCopy } from './notify-copy.js';
 
 const CLUSTER_TOTAL = 284;
 const CLUSTER_UNENROLLED = 118;
@@ -23,6 +26,7 @@ export class SimService {
     private readonly enrollments: EnrollmentsService,
     private readonly messages: MessagesService,
     private readonly liveEvents: LiveEventsService,
+    private readonly campaigns: CampaignsService,
   ) {}
 
   private async customer(id: string): Promise<CustomerDoc> {
@@ -151,5 +155,42 @@ export class SimService {
         audience: { kind: 'FEEDER', feederCode, segment: 'ENROLLED_EV' },
       },
     });
+  }
+
+  /** Quick send: one phone notification to a demo customer, picked from NOTIFY_PRESETS. */
+  async notify(customerId: string, preset: NotifyPreset, actor: AuditActor): Promise<SimNotifyResult> {
+    const c = await this.customer(customerId);
+    if (!c.demoRole) throw new BadRequestException('Quick send only goes to the demo customers');
+    const enrolled = await this.enrollments.isEnrolled(c._id);
+    if (preset === 'EV_DETECTED') {
+      const e = await this.evDetected(customerId);
+      return { text: `${e.headline} ${e.summary}` };
+    }
+    if (preset === 'STOP_CHARGING' || preset === 'ENROLL_OFFER') {
+      if (preset === 'STOP_CHARGING' && !enrolled) throw new BadRequestException(`${c.firstName} is not enrolled; stop-charging requests go to enrolled customers`);
+      if (preset === 'ENROLL_OFFER' && enrolled) throw new BadRequestException(`${c.firstName} is already enrolled`);
+      await this.campaigns.create(
+        {
+          type: preset,
+          audience: { kind: 'FEEDER', feederCode: c.feederCode, segment: preset === 'STOP_CHARGING' ? 'ENROLLED_EV' : 'UNENROLLED_EV' },
+          exclusions: { optedOut: false, contactedLast7Days: false, lifeSupport: false },
+          ...CAMPAIGN_COPY[preset],
+          channels: { push: true, inApp: true, sms: false, email: false },
+          schedule: { sendNow: true, expiresInHours: 4 },
+          testCustomerId: customerId,
+        },
+        actor,
+      );
+      return {
+        text: preset === 'STOP_CHARGING'
+          ? `Stop-charging request sent to ${c.firstName}'s phone. Start and end the event on the DR events page (or E in the presenter bar).`
+          : `Enrollment offer sent to ${c.firstName}'s phone.`,
+      };
+    }
+    if (!isPlainPreset(preset)) throw new BadRequestException('Unknown preset');
+    const w = nextEventWindow();
+    const copy = notifyCopy(preset, { firstName: c.firstName, peakWindow: fmtWindow(w.start.toISOString(), w.end.toISOString()), clock: fmtClock(new Date()) });
+    await this.messages.create({ customerId: c._id, campaignId: null, drEventId: null, ...copy });
+    return { text: `“${copy.title}” sent to ${c.firstName}'s phone.` };
   }
 }

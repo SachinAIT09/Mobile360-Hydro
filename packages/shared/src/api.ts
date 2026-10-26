@@ -42,6 +42,8 @@ import type {
   Program,
   RatePlanComparison,
   ReportsSummary,
+  SimNotifyRequest,
+  SimNotifyResult,
   SmartChargingPlan,
   SmartChargingUpdateRequest,
   StatsOverview,
@@ -106,6 +108,7 @@ export const ApiPaths = {
   simEvDetected: '/sim/ev-detected',
   simCluster: '/sim/stopped-charging-cluster',
   simForecast: '/sim/feeder-forecast-high',
+  simNotify: '/sim/notify',
 } as const;
 
 export class ApiError extends Error {
@@ -203,6 +206,7 @@ export function createApi(opts: ApiOptions) {
     simEvDetected: (customerId: string) => post<LiveEvent>(ApiPaths.simEvDetected, { customerId }),
     simCluster: (substationCode: string) => post<LiveEvent>(ApiPaths.simCluster, { substationCode }),
     simForecast: (feederCode: string) => post<LiveEvent>(ApiPaths.simForecast, { feederCode }),
+    simNotify: (b: SimNotifyRequest) => post<SimNotifyResult>(ApiPaths.simNotify, b),
   };
 }
 

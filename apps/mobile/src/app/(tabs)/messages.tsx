@@ -17,6 +17,7 @@ function iconFor(m: Message): IconName {
   switch (m.kind) {
     case 'EV_DETECTED':
     case 'ENROLL_OFFER':
+    case 'CHARGING':
       return 'carCharge';
     case 'STOP_CHARGING':
       return 'bolt';

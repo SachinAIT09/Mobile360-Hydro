@@ -5,3 +5,4 @@ export * from './brand';
 export * from './tokens';
 export * from './format';
 export * from './geo';
+export * from './demo-notify';

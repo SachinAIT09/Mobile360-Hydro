@@ -131,7 +131,9 @@ export default function MessageDetail() {
           {msg.kind === 'EV_DETECTED' && summary?.evStatus !== 'ENROLLED' ? (
             <Button label="See program & enroll" variant="ev" onPress={() => router.push({ pathname: '/program', params: { messageId: msg.id, source: 'APP_POPUP' } } as never)} />
           ) : null}
-          {msg.kind === 'BILL' ? <Button label="View bill" href="/bill" /> : null}
+          {msg.kind === 'BILL' && msg.tag === 'Usage' ? <Button label="See my usage" href="/energy" /> : null}
+          {msg.kind === 'BILL' && msg.tag !== 'Usage' ? <Button label="View bill" href="/bill" /> : null}
+          {msg.kind === 'CHARGING' ? <Button label="Smart charging" href="/smart-charging" /> : null}
           {msg.kind === 'OUTAGE' ? <Button label="Outages" href="/outage" variant="secondary" /> : null}
         </ScrollView>
       )}

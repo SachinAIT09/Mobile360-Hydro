@@ -305,7 +305,7 @@ export interface OutageReportResponse {
 
 // ---------------------------------------------------------------- messages
 
-export type MessageKind = 'EV_DETECTED' | 'ENROLL_OFFER' | 'STOP_CHARGING' | 'BILL' | 'OUTAGE';
+export type MessageKind = 'EV_DETECTED' | 'ENROLL_OFFER' | 'STOP_CHARGING' | 'BILL' | 'OUTAGE' | 'CHARGING';
 export type MessageAction = 'ENROLLED' | 'DECLINED' | 'DISMISSED' | 'REMIND_LATER' | 'NOT_EV' | 'RESPONDED';
 /** Inbox filter chip a message belongs to. */
 export type MessageCategory = 'Alerts' | 'Offers' | 'Billing';
@@ -728,3 +728,17 @@ export interface DemoResetRequest {
 export interface SimEvDetectedRequest { customerId: string }
 export interface SimClusterRequest { substationCode: string }
 export interface SimForecastRequest { feederCode: string }
+
+/** One-click phone notifications on the demo control panel ("quick send"). Catalogue in demo-notify.ts. */
+export type NotifyPreset =
+  | 'EV_DETECTED'
+  | 'CHARGING_STARTED'
+  | 'CHARGING_COMPLETE'
+  | 'PEAK_SOON'
+  | 'STOP_CHARGING'
+  | 'ENROLL_OFFER'
+  | 'BILL_READY'
+  | 'HIGH_USAGE'
+  | 'OUTAGE';
+export interface SimNotifyRequest { customerId: string; preset: NotifyPreset }
+export interface SimNotifyResult { text: string }
