@@ -8,7 +8,7 @@ import { CurrentUser, Roles, type RequestUser } from '../auth/auth.js';
 import { config } from '../config.js';
 import { nextEventWindow } from '../common/time.js';
 import { QR_OPTIONS } from '../static.js';
-import { phoneAppUrl } from './phone-url.js';
+import { isLocalNetworkUrl, phoneAppUrl } from './phone-url.js';
 import { SimulationScheduler } from '../campaigns/simulation.scheduler.js';
 import { CustomersService } from '../customers/customers.service.js';
 import { Db } from '../db/db.service.js';
@@ -68,11 +68,11 @@ export class DemoController {
     };
   }
 
-  /** URL + QR code for opening the customer app on a phone on the same network (same as the start page). */
+  /** URL + QR code for opening the customer app on a phone (same as the start page). */
   @Get('phone')
   async phone(@Req() req: Request): Promise<DemoPhone> {
     const url = phoneAppUrl(req);
-    return { url, qrSvg: await QRCode.toString(url, QR_OPTIONS) };
+    return { url, qrSvg: await QRCode.toString(url, QR_OPTIONS), local: isLocalNetworkUrl(url) };
   }
 
   /**

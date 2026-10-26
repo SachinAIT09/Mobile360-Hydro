@@ -4,12 +4,16 @@ import { CardHeader } from './CardHeader';
 import { ErrorNotice, LoadingBlock } from './State';
 import './addons.css';
 
-/** QR code and URL for opening the customer app on a phone on the same network. */
+/** QR code and URL for opening the customer app on a phone. */
 export function PhonePairingCard() {
   const phone = useLoad((api) => api.demoPhone());
   return (
     <div className="card pad stack gap10">
-      <CardHeader icon="phone" tone="accent" title="Phone pairing" sub={`Scan to open the ${BRAND.appName} app on a phone on the same network.`} />
+      <CardHeader icon="phone" tone="accent" title="Phone pairing" sub={
+          phone.data && !phone.data.local
+            ? `Scan to open the ${BRAND.appName} app on any phone, on Wi-Fi or mobile data.`
+            : `Scan to open the ${BRAND.appName} app on a phone on the same Wi-Fi as this computer.`
+        } />
       {phone.error && <ErrorNotice message={phone.error} onRetry={() => void phone.reload()} />}
       {phone.loading && !phone.data && <LoadingBlock rows={2} rowHeight={60} label="Loading QR code" />}
       {phone.data && (

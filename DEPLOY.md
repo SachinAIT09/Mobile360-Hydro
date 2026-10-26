@@ -73,9 +73,9 @@ Catalyst AppSail runs the same Docker image as a managed service with an HTTPS U
 pnpm deploy:catalyst
 ```
 
-This builds the image for `linux/amd64` (the platform AppSail requires), saves it to `.catalyst-build/hydro-one-demo.tar`, and runs `catalyst deploy appsail --name hydroonedemo --source docker-archive://... --port 3000`. To redeploy the last built image without rebuilding: `pnpm deploy:catalyst -SkipBuild`.
+This builds the image for `linux/amd64` (the platform AppSail requires), saves it to `.catalyst-build/hydro-one-demo.tar`, and runs `catalyst deploy appsail --name mobile360-hydro --source docker-archive://... --port 3000`. To redeploy the last built image without rebuilding: `pnpm deploy:catalyst -SkipBuild`.
 
-### First-time console settings (Catalyst console > AppSail > hydroonedemo)
+### First-time console settings (Catalyst console > AppSail > mobile360-hydro)
 
 | Setting | Value |
 |---|---|
@@ -84,16 +84,16 @@ This builds the image for `linux/amd64` (the platform AppSail requires), saves i
 | Environment variable `JWT_SECRET` | Any long random string |
 | Optional: `DEMO_TIMEZONE`, `EV_ALWAYS_CHARGING`, `DEMO_CUSTOMER_FIRST_NAME` | As in the settings table below |
 
-Then open the **development** URL (`https://hydroonedemo-<id>.development.catalystappsail.com`) and check `/`, `/staff` and `/app`. When it looks right, use **Deploy to production** in the console. You can map your own domain under the service's domain settings.
+Then open the **development** URL (`https://mobile360-hydro-<id>.development.catalystappsail.in`) and check `/`, `/staff` and `/app`. When it looks right, use **Deploy to production** in the console. You can map your own domain under the service's domain settings.
 
 ### Development URL
 
-`https://hydroonedemo-50047125140.development.catalystappsail.in` (project Mobile360-Hydro, India DC). On a cold start the "Starting the demo…" page answers in under a second and the app is ready in about 7 s.
+`https://powerconnectmobile360.development.catalystappsail.in` (service `mobile360-hydro`; the short address was set with **Edit AppSail URL** on the service page) (project Mobile360-Hydro, India DC). On a cold start the "Starting the demo…" page answers in under a second and the app is ready in about 7 s.
 
 ### Check it from this PC
 
 ```powershell
-$env:BASE_URL = "https://hydroonedemo-<id>.development.catalystappsail.com"; pnpm e2e
+$env:BASE_URL = "https://mobile360-hydro-<id>.development.catalystappsail.in"; pnpm e2e
 ```
 
 The browser tests reset the demo data, so don't run them while someone is presenting.

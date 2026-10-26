@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { originFrom } from './phone-url.js';
+import { isLocalNetworkUrl, originFrom } from './phone-url.js';
 
 describe('originFrom', () => {
   it('fixes Catalyst AppSail headers: http + host:443 is really https without a port', () => {
@@ -21,5 +21,18 @@ describe('originFrom', () => {
   it('uses PUBLIC_URL when set', () => {
     expect(originFrom({ host: 'internal:9000' }, 'http', 'https://ev-demo.powerconnect.ai/some/path')).toBe('https://ev-demo.powerconnect.ai');
     expect(originFrom({ host: 'localhost:3000' }, 'http', 'not a url')).toBe('http://localhost:3000');
+  });
+});
+
+describe('isLocalNetworkUrl', () => {
+  it('is true for addresses only reachable on this network', () => {
+    for (const u of ['http://localhost:3000/app', 'http://127.0.0.1:3000', 'http://192.168.141.81:3000/app', 'http://10.0.0.5', 'http://172.20.1.2:3000', 'http://demo-pc.local:3000']) {
+      expect(isLocalNetworkUrl(u)).toBe(true);
+    }
+  });
+  it('is false for public hosts', () => {
+    for (const u of ['https://powerconnectmobile360.development.catalystappsail.in/app', 'https://demo.example.com', 'http://172.32.0.1', 'http://8.8.8.8']) {
+      expect(isLocalNetworkUrl(u)).toBe(false);
+    }
   });
 });

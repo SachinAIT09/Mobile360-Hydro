@@ -13,7 +13,7 @@
   and the service is deployed with --port 3000, so both agree.
 #>
 param(
-  [string]$Name = 'hydroonedemo',
+  [string]$Name = 'mobile360-hydro',
   [string]$Image = 'hydro-one-demo:latest',
   [switch]$SkipBuild
 )

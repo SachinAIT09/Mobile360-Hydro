@@ -6,7 +6,7 @@ import type { NestExpressApplication } from '@nestjs/platform-express';
 import express, { type Request, type Response, type NextFunction } from 'express';
 import QRCode from 'qrcode';
 import { BRAND, colors } from '@demo/shared';
-import { originOf, phoneAppUrl } from './demo/phone-url.js';
+import { isLocalNetworkUrl, phoneAppUrl } from './demo/phone-url.js';
 
 /**
  * Production hosting: one server, one port.
@@ -40,8 +40,14 @@ function spa(prefix: string, dir: string) {
   return [prefix, router] as const;
 }
 
+/** Network advice under the QR code: only a local address needs the phone on the same Wi-Fi. */
+function phoneNote(appUrl: string): string {
+  if (!isLocalNetworkUrl(appUrl)) return 'It works on any phone, on Wi-Fi or mobile data.';
+  const u = new URL(appUrl);
+  return `The phone must be on the same Wi-Fi as this computer, and the firewall must allow port ${u.port || (u.protocol === 'https:' ? '443' : '80')}.`;
+}
+
 async function startPage(req: Request, hasStaff: boolean, hasApp: boolean): Promise<string> {
-  const origin = originOf(req);
   const appUrl = phoneAppUrl(req);
   const qr = hasApp ? await QRCode.toString(appUrl, QR_OPTIONS) : '';
   const card = (href: string, title: string, sub: string, primary: boolean, ok: boolean) =>
@@ -86,7 +92,7 @@ footer{max-width:880px;margin:0 auto;padding:0 24px 28px;font-size:12px;color:va
 ${card('/staff/feeders', 'Staff app', `Feeder visibility, Campaign 360 and DR events for ${BRAND.utilityName} staff.`, true, hasStaff)}
 ${card('/app/login', 'Customer app', 'The mobile app. Sign in as manny@demo.test or priya@demo.test, any password.', false, hasApp)}
 </div>
-${hasApp ? `<section class="phone">${qr}<div><strong>Open the customer app on a phone</strong><span>Scan with the phone camera, or open <code>${appUrl}</code>. The phone must be on the same Wi-Fi as this computer, and the firewall must allow port ${new URL(origin).port || '80'}. The phone and the staff app stay in sync through this server.</span></div></section>` : ''}
+${hasApp ? `<section class="phone">${qr}<div><strong>Open the customer app on a phone</strong><span>Scan with the phone camera, or open <code>${appUrl}</code>. ${phoneNote(appUrl)} The phone and the staff app stay in sync through this server.</span></div></section>` : ''}
 <section class="phone" style="display:block"><strong style="font-size:15px">Demo script</strong>
 <ol style="margin-top:10px">
 <li>Open the <strong>Staff app</strong> in one tab and the <strong>Customer app</strong> (Manny) in another tab or on a phone.</li>

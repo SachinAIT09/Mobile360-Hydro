@@ -718,6 +718,8 @@ export interface DemoPhone {
   url: string;
   /** Inline SVG markup of a QR code for `url`. */
   qrSvg: string;
+  /** True when `url` is a local-network address, so the phone must be on the same Wi-Fi as the server. */
+  local: boolean;
 }
 
 export interface DemoResetRequest {

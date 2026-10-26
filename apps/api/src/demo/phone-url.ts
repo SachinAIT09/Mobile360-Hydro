@@ -58,6 +58,19 @@ export function phoneOrigin(req: Request): string {
   return url.origin;
 }
 
+/**
+ * True when the URL only works inside this computer's network: loopback, private IPv4 ranges or *.local.
+ * Then a phone must be on the same Wi-Fi; a public host (Catalyst, a custom domain) works from anywhere.
+ */
+export function isLocalNetworkUrl(url: string): boolean {
+  const host = new URL(url).hostname.replace(/^\[|\]$/g, '').toLowerCase();
+  if (host === 'localhost' || host === '::1' || host.endsWith('.local')) return true;
+  const m = /^(\d+)\.(\d+)\.\d+\.\d+$/.exec(host);
+  if (!m) return false;
+  const [a, b] = [Number(m[1]), Number(m[2])];
+  return a === 10 || a === 127 || (a === 172 && b >= 16 && b <= 31) || (a === 192 && b === 168) || (a === 169 && b === 254) || a === 0;
+}
+
 /** Full URL of the customer app for a phone (served at /app in production). */
 export function phoneAppUrl(req: Request): string {
   return `${phoneOrigin(req)}/app`;
