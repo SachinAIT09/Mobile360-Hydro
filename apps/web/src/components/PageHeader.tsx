@@ -1,25 +1,29 @@
-import { useContext, useEffect, useState, type ReactNode } from 'react';
-import { PageTitleContext } from '../lib/pageTitle';
-
-/** Holds the current page title so the Shell's top bar can render it. */
-export function PageTitleProvider({ children }: { children: ReactNode }) {
-  const [title, setTitle] = useState('');
-  return <PageTitleContext.Provider value={{ title, setTitle }}>{children}</PageTitleContext.Provider>;
-}
+import { useEffect, type ReactNode } from 'react';
+import { BRAND } from '@demo/shared';
+import { Icon, type IconName } from './icons';
 
 /**
- * Declares the page title for the Shell's top bar and the document title.
- * Renders nothing: the top bar owns the visible h1.
+ * Page header: a 42px icon tile, the page H1 and a one-line subtitle, with optional actions on the right.
+ * Also sets the document title.
  */
-export function PageHeader({ title }: { title: string }) {
-  const { setTitle } = useContext(PageTitleContext);
+export function PageHeader({ title, icon, sub, actions }: { title: string; icon: IconName; sub?: ReactNode; actions?: ReactNode }) {
   useEffect(() => {
-    setTitle(title);
     const prev = document.title;
-    document.title = `${title} · Grid Edge Insights`;
+    document.title = `${title} · ${BRAND.staffProductName}`;
     return () => {
       document.title = prev;
     };
-  }, [title, setTitle]);
-  return null;
+  }, [title]);
+  return (
+    <div className="page-head">
+      <span className="head-tile" aria-hidden="true">
+        <Icon name={icon} size={20} />
+      </span>
+      <div className="head-text">
+        <h1>{title}</h1>
+        {sub && <p>{sub}</p>}
+      </div>
+      {actions && <div className="row gap8 center">{actions}</div>}
+    </div>
+  );
 }

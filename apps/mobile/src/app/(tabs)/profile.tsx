@@ -43,7 +43,7 @@ export default function ProfileScreen() {
             <Avatar name={`${customer.firstName} ${customer.lastName}`} size={64} onDark />
             <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                <Txt size={20} weight="bold" color="#FFFFFF" numberOfLines={1} style={{ flexShrink: 1 }}>
+                <Txt size={20} weight="bold" color="#FFFFFF" numberOfLines={2} style={{ flexShrink: 1 }}>
                   {customer.firstName} {customer.lastName}
                 </Txt>
                 <Icon name="verified" size={18} color={colors.accent} />

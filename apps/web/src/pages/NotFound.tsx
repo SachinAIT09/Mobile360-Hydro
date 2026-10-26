@@ -6,7 +6,7 @@ export function NotFoundPage() {
   const { pathname } = useLocation();
   return (
     <main className="page">
-      <PageHeader title="Page not found" />
+      <PageHeader title="Page not found" icon="alert" />
       <div className="card pad">
         <EmptyState
           title="There’s nothing at this address"

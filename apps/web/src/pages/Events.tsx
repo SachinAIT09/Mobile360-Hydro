@@ -73,14 +73,17 @@ export function EventsPage() {
 
   return (
     <main className="page">
-      <PageHeader title="DR events" />
-      <div className="page-intro">
-        <p className="lead">Stop-charging requests sent through Campaign 360. Start or end an event to drive the demo.</p>
-        <Link className="btn outline" to="/campaigns/new?type=STOP_CHARGING&feeder=SUB-01-F1&segment=ENROLLED_EV">
-          <Icon name="bolt" size={16} />
-          New stop-charging request
-        </Link>
-      </div>
+      <PageHeader
+        title="DR events"
+        icon="bolt"
+        sub="Stop-charging requests sent through Campaign 360. Start or end an event to drive the demo."
+        actions={
+          <Link className="btn outline" to="/campaigns/new?type=STOP_CHARGING&feeder=SUB-01-F1&segment=ENROLLED_EV">
+            <Icon name="bolt" size={16} />
+            New stop-charging request
+          </Link>
+        }
+      />
 
       <section className="kpis" aria-label="Event totals">
         <div className="card kpi">

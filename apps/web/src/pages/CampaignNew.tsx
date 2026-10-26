@@ -314,6 +314,7 @@ export function CampaignNewPage() {
 
   async function cancelScheduled() {
     if (!sent) return;
+    if (!window.confirm('Cancel this scheduled campaign? It will not be sent, and this cannot be undone.')) return;
     setCancelBusy(true);
     try {
       setSent(await api.cancelCampaign(sent.id));
@@ -369,17 +370,20 @@ export function CampaignNewPage() {
 
   return (
     <main className="page" style={{ gap: 18 }}>
-      <PageHeader title="New feeder campaign" />
-      <div className="stack gap6">
-        <Link to="/feeders" className="row center gap6" style={{ fontSize: 14, fontWeight: 600 }}>
-          <Icon name="back" size={16} />
-          Back to the Dashboard
-        </Link>
-        <p className="lead">
-          Audience built from {BRAND.partners.evDetection} EV detection on {audience.kind === 'LIVE_EVENT' ? audienceDesc : <span className="mono">{audienceDesc}</span>}. Messages go to the{' '}
-          {BRAND.utilityName} app and the channels you pick.
-        </p>
-      </div>
+      <Link to="/feeders" className="row center gap6" style={{ fontSize: 14, fontWeight: 600 }}>
+        <Icon name="back" size={16} />
+        Back to the Dashboard
+      </Link>
+      <PageHeader
+        title="New feeder campaign"
+        icon="send"
+        sub={
+          <>
+            Audience built from {BRAND.partners.evDetection} EV detection on {audience.kind === 'LIVE_EVENT' ? audienceDesc : <span className="mono">{audienceDesc}</span>}. Messages go to the{' '}
+            {BRAND.utilityName} app and the channels you pick.
+          </>
+        }
+      />
 
       {draft.fromAssistant && (
         <div className="notice info row center gap8" role="note">
@@ -412,12 +416,13 @@ export function CampaignNewPage() {
               </span>
             </div>
             <div className="grid3">
-              <label className="field">
+              {/* Set by the campaign type, so it is shown read-only rather than as a one-option dropdown. */}
+              <div className="field">
                 <span className="lbl">TRIGGER (NET2GRID)</span>
-                <select className="fld" value={DEFAULTS[type].trigger} onChange={() => undefined}>
-                  <option>{DEFAULTS[type].trigger}</option>
-                </select>
-              </label>
+                <p className="fld fld-static">
+                  {DEFAULTS[type].trigger}
+                </p>
+              </div>
               {multi ? (
                 <div className="field" role="group" aria-label="Feeders">
                   <span className="lbl">FEEDERS ({multi.length})</span>
@@ -677,7 +682,7 @@ export function CampaignNewPage() {
                     : `Sent to ${fmtInt(sent.stats.targeted)} customers (${sent.audienceLabel}). Results update live on the right.`}
             </div>
           )}
-          <div className="row gap10" style={{ justifyContent: 'flex-end' }}>
+          <div className="row gap10 form-actions">
             {sent && !sent.isTest && (
               <button
                 type="button"

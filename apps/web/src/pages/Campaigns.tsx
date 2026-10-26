@@ -41,20 +41,23 @@ export function CampaignsPage() {
 
   return (
     <main className="page">
-      <PageHeader title="Campaign 360" />
-      <div className="page-intro">
-        <p className="lead">Feeder-level campaigns built from {BRAND.partners.evDetection} EV detection. Results update live as customers act in the app.</p>
-        <div className="row gap8">
-          <Link className="btn outline" to="/campaigns/new?type=STOP_CHARGING&feeder=SUB-01-F1&segment=ENROLLED_EV">
-            <Icon name="bolt" size={16} />
-            New stop-charging request
-          </Link>
-          <Link className="btn pri" to="/campaigns/new?type=ENROLL_OFFER&feeder=SUB-01-F1&segment=UNENROLLED_EV">
-            <Icon name="send" size={16} />
-            New enrollment offer
-          </Link>
-        </div>
-      </div>
+      <PageHeader
+        title="Campaign 360"
+        icon="campaign"
+        sub={`Feeder-level campaigns built from ${BRAND.partners.evDetection} EV detection. Results update live as customers act in the app.`}
+        actions={
+          <>
+            <Link className="btn outline" to="/campaigns/new?type=STOP_CHARGING&feeder=SUB-01-F1&segment=ENROLLED_EV">
+              <Icon name="bolt" size={16} />
+              New stop-charging request
+            </Link>
+            <Link className="btn pri" to="/campaigns/new?type=ENROLL_OFFER&feeder=SUB-01-F1&segment=UNENROLLED_EV">
+              <Icon name="send" size={16} />
+              New enrollment offer
+            </Link>
+          </>
+        }
+      />
 
       <section className="kpis" aria-label="Campaign totals">
         <div className="card kpi">

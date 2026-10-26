@@ -75,36 +75,34 @@ export function FeedersPage() {
 
   return (
     <main className="page">
-      <PageHeader title="Dashboard" />
-      <section className="hero">
-        <div className="stack gap8">
-          <h2 className="h1">You manage the EVs that signed up. This shows the ones that didn't.</h2>
-          <p className="lead">
-            EVs detected by {BRAND.partners.evDetection} from smart meter data, matched to substation and feeder, compared with program enrollment.
-          </p>
-        </div>
-        <div className="row gap8" style={{ position: 'relative', zIndex: 1 }}>
-          <label className="filter" style={{ color: 'var(--header-muted)' }}>
-            Region
-            <select value={region} onChange={(e) => setRegion(e.target.value)}>
-              <option value="all">All regions</option>
-              {regions.map((r) => (
-                <option key={r} value={r}>
-                  {r}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="filter" style={{ color: 'var(--header-muted)' }}>
-            Period
-            <select value={String(period)} onChange={(e) => setPeriod(Number(e.target.value) as 7 | 30 | 90)}>
-              <option value="30">Last 30 days</option>
-              <option value="7">Last 7 days</option>
-              <option value="90">Last 90 days</option>
-            </select>
-          </label>
-        </div>
-      </section>
+      <PageHeader
+        title="Dashboard"
+        icon="dashboard"
+        sub={`You manage the EVs that signed up. This shows the ones that didn't: EVs detected by ${BRAND.partners.evDetection} from smart meter data, matched to substation and feeder, compared with program enrollment.`}
+        actions={
+          <>
+            <label className="filter">
+              Region
+              <select value={region} onChange={(e) => setRegion(e.target.value)}>
+                <option value="all">All regions</option>
+                {regions.map((r) => (
+                  <option key={r} value={r}>
+                    {r}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="filter">
+              Period
+              <select value={String(period)} onChange={(e) => setPeriod(Number(e.target.value) as 7 | 30 | 90)}>
+                <option value="30">Last 30 days</option>
+                <option value="7">Last 7 days</option>
+                <option value="90">Last 90 days</option>
+              </select>
+            </label>
+          </>
+        }
+      />
 
       <section className="kpis" aria-label="Headline figures">
         <Kpi label="Substations" value={ov ? fmtInt(ov.substations) : '—'} sub="with matched EVs" icon="pylon" />

@@ -43,13 +43,16 @@ export function DemoPage() {
 
   return (
     <main className="page">
-      <PageHeader title="Demo control panel" />
-      <div className="page-intro">
-        <p className="lead">Fire any notification at the customer app with one click. {BRAND.partners.evDetection} simulations, DR event start/end and demo reset are on the presenter bar (press Shift+P on any staff page). Not part of the product; kept out of the main sections.</p>
-        <span className={`pill ${connected ? 'ok' : 'danger'}`}>
-          Staff live updates {connected ? 'connected' : 'disconnected'} · {state.data?.staffSockets ?? 0} staff socket(s)
-        </span>
-      </div>
+      <PageHeader
+        title="Demo control panel"
+        icon="settings"
+        sub={`Fire any notification at the customer app with one click. ${BRAND.partners.evDetection} simulations, DR event start/end and demo reset are on the presenter bar (press Shift+P on any staff page). Not part of the product.`}
+        actions={
+          <span className={`pill ${connected ? 'ok' : 'danger'}`}>
+            Staff live updates {connected ? 'connected' : 'disconnected'} · {state.data?.staffSockets ?? 0} staff socket(s)
+          </span>
+        }
+      />
 
       {msg && (
         <div className={`notice ${msg.kind === 'ok' ? 'ok' : 'err'}`} role="status">

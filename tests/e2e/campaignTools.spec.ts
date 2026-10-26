@@ -92,7 +92,14 @@ test.describe('Campaign power tools', () => {
     await expect(row.getByText('Scheduled', { exact: true })).toBeVisible();
 
     await row.getByRole('link', { name: c.title }).click();
+    // Cancelling asks for confirmation; check the prompt, then accept it.
+    let prompt = '';
+    web.once('dialog', (d) => {
+      prompt = d.message();
+      void d.accept();
+    });
     await web.getByRole('button', { name: /^cancel$/i }).click();
+    await expect.poll(() => prompt).toMatch(/cannot be undone/i);
     await expect.poll(async () => (await campaignById(api, c.id)).status).toBe('CANCELLED');
     await expect(web.getByText('Cancelled', { exact: true }).filter({ visible: true }).first()).toBeVisible();
     const audit = await auditLog(api);

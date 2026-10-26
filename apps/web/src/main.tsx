@@ -11,6 +11,7 @@ import { DemoPage } from './pages/Demo';
 import { CampaignKeyed } from './pages/CampaignKeyed';
 import { CampaignDetailPage } from './pages/CampaignDetail';
 import { AuditPage } from './pages/Audit';
+import { AssistantPage } from './pages/Assistant';
 import { NotFoundPage } from './pages/NotFound';
 import { ReportsPage } from './pages/ReportsLazy';
 
@@ -34,6 +35,7 @@ createRoot(document.getElementById('root') as HTMLElement).render(
                 </Suspense>
               }
             />
+            <Route path="/assistant" element={<AssistantPage />} />
             <Route path="/demo" element={<DemoPage />} />
             <Route path="/audit" element={<AuditPage />} />
             <Route path="/login" element={<Navigate to="/feeders" replace />} />

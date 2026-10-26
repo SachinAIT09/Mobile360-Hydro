@@ -2,7 +2,7 @@
 
 PowerConnect.AI concept demo for Hydro One: a customer **mobile app** and a staff **web app**, interlinked through one API. Net2Grid EV detection drives DR enrollment and Campaign 360 feeder messaging. **It is built and working**; changes from here are iterations.
 
-Read first: `docs/BUILD_SPEC.md` (scope, flows, screens), `docs/IMPLEMENTATION_NOTES.md` (exact API behaviour, seed numbers, energy model). Look in `wireframes/` for the approved look.
+Read first: `docs/BUILD_SPEC.md` (scope, flows, screens), `docs/IMPLEMENTATION_NOTES.md` (exact API behaviour, seed numbers, energy model). Look: the staff web app and start page follow the PowerConnect.AI dark dashboard spec, with a matching light theme (dark tokens on `:root`, light overrides on `:root[data-theme='light']` in `apps/web/src/styles.css`; Leaflet colours mirrored in `apps/web/src/lib/theme.ts`; the choice is stored by `lib/themeMode.ts` under `pc-theme`, dark by default, and applied before paint by `index.html` and the start page); the customer app follows its Figma restyle. `wireframes/` is the original layout reference.
 
 ## Layout
 
@@ -16,10 +16,10 @@ Read first: `docs/BUILD_SPEC.md` (scope, flows, screens), `docs/IMPLEMENTATION_N
 
 - Mobile and web never talk directly. Cross-app effects go API → Socket.IO events.
 - External systems stay simulated behind interfaces: Net2Grid (`EvDetectionSource`), Kubra (`PaymentProvider`), SMS/email. Never collect real payment or ID data.
-- The staff feeder map uses real basemaps (Light/Streets from OpenStreetMap, Satellite from Esri) with feeders routed along real streets from the committed `apps/web/src/data/feeder-routes.json` (regenerate with `node scripts/gen-feeder-routes.mjs`); positions are synthetic (`packages/shared/src/geo.ts`) and labelled illustrative; it falls back to the schematic when tiles can't load. The customer outage map is still a schematic.
+- The staff feeder map uses real basemaps (Dark, a CSS-recoloured OpenStreetMap, and Streets from OpenStreetMap, Satellite from Esri) with feeders routed along real streets from the committed `apps/web/src/data/feeder-routes.json` (regenerate with `node scripts/gen-feeder-routes.mjs`); positions are synthetic (`packages/shared/src/geo.ts`) and labelled illustrative; it falls back to the schematic when tiles can't load. The customer outage map is still a schematic.
 - The assistant is scripted on purpose: no LLM or network calls. Answers come from live demo data and always show the disclosure.
 - Brand values and program names are placeholders in `packages/shared/src/brand.ts`. Don't hard-code them elsewhere.
-- Match the wireframes. Don't redesign without being asked.
+- Keep the current look (dark navy glass dashboard on staff, plus its light theme; no new colours, radii or shadows outside the tokens, and every new colour needs both a dark and a light value). Text on surfaces uses tokens (`--navy` for strong text), never literal `#fff`; white is only for text on blue accents. Don't redesign without being asked.
 - TypeScript strict; DTO validation on every API body; touch targets ≥ 44px; accessibility labels on icon-only buttons.
 - Lint is ESLint 10 flat config at the root (`eslint.config.mjs`) with the React Compiler rules on: no `setState` synchronously inside an effect (use promise chains or callbacks), no ref reads during render, and in `apps/web` a file that exports a component exports nothing else.
 - Unit tests are Vitest (`*.spec.ts` next to the code in `apps/api`, `apps/web/src/lib`, `packages/shared`). API tests never boot Nest DI (`AppModule`, `@nestjs/testing`): esbuild emits no decorator metadata. Test pure functions or hand-built services; the maths lives in small modules for that reason (`campaigns/merge.ts`, `campaigns/simulation-plan.ts`, `campaigns/ab.ts`, `campaigns/schedule.ts`, `dr-events/dr-result.ts`, `grid/feeder-stat.ts`, `energy/tariff.ts`, `energy/charging-plan.ts`, `energy/integrate.ts`, `assistant/nlu.ts`, `assistant/*-answers.ts`, `assistant/copy-drafts.ts`, `seed/allocate.ts`, `seed/bills.ts`).
@@ -46,4 +46,4 @@ Zoho Catalyst AppSail (India DC) runs the same image: `pnpm deploy:catalyst` (`s
 - `pnpm dev`: api (3000, Swagger at /docs) + web (5173) + mobile web (8081)
 - `pnpm build` then `pnpm start`: production, everything on :3000
 - `pnpm typecheck`, `pnpm lint`, `pnpm test`, `pnpm e2e`
-- Demo day: staff app `/demo` has the guided script, preflight checks and phone QR; `Shift+P` on any staff page toggles the presenter bar (hotkeys N/B next/back, 1/2/3 simulate, E end event, R reset). "Reset (keep phone signed in)" is the default reset; demo customer ids are fixed so tokens survive it.
+- Demo day: staff app `/demo` has the one-click "Send to phone" board and the phone QR; `Shift+P` on any staff page toggles the presenter bar (hotkeys N/B next/back, 1/2/3 simulate, E end event, R reset). "Reset (keep phone signed in)" is the default reset; demo customer ids are fixed so tokens survive it.

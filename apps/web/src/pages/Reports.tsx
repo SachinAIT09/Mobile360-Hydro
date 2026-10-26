@@ -22,7 +22,7 @@ import { Icon, type IconName } from '../components/icons';
 import { EmptyState, ErrorNotice, LoadingBlock } from '../components/State';
 import '../components/addons.css';
 
-const AXIS = { fontSize: 11, fill: 'var(--muted)' } as const;
+const AXIS = { fontSize: 12, fill: 'var(--font-color)' } as const;
 const KNOWN = 'var(--solar)';
 const UNENROLLED = 'var(--ev)';
 
@@ -168,14 +168,12 @@ export function ReportsPage() {
 
   return (
     <main className="page">
-      <PageHeader title="Reports" />
-      <div className="page-intro">
-        <p className="lead">
-          Program and campaign results, updated live as customers act in the app. Enrollment, {BRAND.partners.evDetection} visibility and demand-response
-          performance from the pilot data set.
-        </p>
-        {generated && <span className="small muted">Generated {generated}</span>}
-      </div>
+      <PageHeader
+        title="Reports"
+        icon="chart"
+        sub={`Program and campaign results, updated live as customers act in the app. Enrollment, ${BRAND.partners.evDetection} visibility and demand-response performance from the pilot data set.`}
+        actions={generated && <span className="small muted">Generated {generated}</span>}
+      />
 
       {reports.error && <ErrorNotice message={`Couldn't load the report figures: ${reports.error}`} onRetry={() => void reports.reload()} />}
       {reports.loading && !data && <LoadingBlock rows={4} rowHeight={48} label="Loading reports" />}
@@ -219,12 +217,12 @@ export function ReportsPage() {
               <div className="chart" role="img" aria-label={`Stacked bar chart of known and unenrolled EVs for ${feederRows.length} feeders on ${liveSub ?? 'the substation'}`}>
                 <ResponsiveContainer>
                   <BarChart data={feederChart} margin={{ top: 8, right: 8, left: -18, bottom: 0 }} barCategoryGap="28%">
-                    <CartesianGrid stroke="var(--divider)" vertical={false} />
+                    <CartesianGrid stroke="var(--border-color)" vertical={false} />
                     <XAxis dataKey="name" tick={AXIS} axisLine={false} tickLine={false} />
                     <YAxis tick={AXIS} axisLine={false} tickLine={false} allowDecimals={false} />
                     <Tooltip content={Tip} cursor={{ fill: 'var(--primary-soft)' }} />
-                    <Bar dataKey="Known" stackId="a" fill={KNOWN} stroke="var(--surface)" strokeWidth={2} isAnimationActive={false} />
-                    <Bar dataKey="Unenrolled" stackId="a" fill={UNENROLLED} stroke="var(--surface)" strokeWidth={2} radius={[4, 4, 0, 0]} isAnimationActive={false} />
+                    <Bar dataKey="Known" stackId="a" fill={KNOWN} stroke="var(--page-bg-deep)" strokeWidth={2} isAnimationActive={false} />
+                    <Bar dataKey="Unenrolled" stackId="a" fill={UNENROLLED} stroke="var(--page-bg-deep)" strokeWidth={2} radius={[4, 4, 0, 0]} isAnimationActive={false} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -259,19 +257,13 @@ export function ReportsPage() {
                   </div>
                 ))}
               </div>
-              <div className="chart" style={{ height: 120 }} role="img" aria-label={`Area chart of daily enrollments over the last ${trend.length} days`}>
+              <div className="chart" style={{ height: 120 }} role="img" aria-label={`Line chart of daily enrollments over the last ${trend.length} days`}>
                 <ResponsiveContainer>
                   <AreaChart data={trend} margin={{ top: 6, right: 6, left: -22, bottom: 0 }}>
-                    <defs>
-                      <linearGradient id="enrollFill" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="var(--ev)" stopOpacity={0.28} />
-                        <stop offset="100%" stopColor="var(--ev)" stopOpacity={0} />
-                      </linearGradient>
-                    </defs>
                     <XAxis dataKey="label" tick={AXIS} axisLine={false} tickLine={false} interval="preserveStartEnd" minTickGap={40} />
                     <YAxis tick={AXIS} axisLine={false} tickLine={false} allowDecimals={false} width={40} />
                     <Tooltip content={Tip} />
-                    <Area type="monotone" dataKey="Enrollments" stroke="var(--ev)" strokeWidth={2} fill="url(#enrollFill)" dot={false} isAnimationActive={false} />
+                    <Area type="monotone" dataKey="Enrollments" stroke="var(--chart-total)" strokeWidth={2} fill="none" dot={false} activeDot={false} isAnimationActive={false} />
                   </AreaChart>
                 </ResponsiveContainer>
               </div>
@@ -323,11 +315,11 @@ export function ReportsPage() {
               <div className="chart" role="img" aria-label={`Horizontal bar chart: ${funnel.stages.map((s) => `${s.stage} ${s.count}`).join(', ')}`}>
                 <ResponsiveContainer>
                   <BarChart data={funnelChart} layout="vertical" margin={{ top: 4, right: 48, left: 8, bottom: 0 }} barCategoryGap="22%">
-                    <CartesianGrid stroke="var(--divider)" horizontal={false} />
+                    <CartesianGrid stroke="var(--border-color)" vertical={false} />
                     <XAxis type="number" tick={AXIS} axisLine={false} tickLine={false} allowDecimals={false} />
                     <YAxis type="category" dataKey="name" tick={AXIS} axisLine={false} tickLine={false} width={72} />
                     <Tooltip content={Tip} cursor={{ fill: 'var(--primary-soft)' }} />
-                    <Bar dataKey="Customers" fill="var(--ev)" radius={[0, 4, 4, 0]} isAnimationActive={false} label={{ position: 'right', fontSize: 11, fill: 'var(--text-body)', formatter: (v: unknown) => fmtInt(Number(v)) }} />
+                    <Bar dataKey="Customers" fill="var(--ev)" radius={[0, 4, 4, 0]} isAnimationActive={false} label={{ position: 'right', fontSize: 11, fill: 'var(--font-color)', formatter: (v: unknown) => fmtInt(Number(v)) }} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>

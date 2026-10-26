@@ -27,7 +27,20 @@ export type IconName =
   | 'file'
   | 'sparkle'
   | 'clock'
-  | 'chat';
+  | 'chat'
+  | 'building'
+  | 'chevron'
+  | 'palette'
+  | 'globe'
+  | 'bot'
+  | 'mic'
+  | 'edit'
+  | 'history'
+  | 'arrowUp'
+  | 'moon'
+  | 'monitor'
+  | 'menu'
+  | 'close';
 
 const PATHS: Record<IconName, string> = {
   dashboard: 'M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z',
@@ -57,6 +70,19 @@ const PATHS: Record<IconName, string> = {
   sparkle: 'M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8zM19 16l.7 2 2 .7-2 .7-.7 2-.7-2-2-.7 2-.7z',
   clock: 'M12 3a9 9 0 1 1 0 18 9 9 0 0 1 0-18zM12 7v5l3 2',
   chat: 'M4 5h16v11H9l-5 4zM8 9.5h8M8 12.5h5',
+  building: 'M4 21V5a1 1 0 0 1 1-1h9a1 1 0 0 1 1 1v16M15 9h4a1 1 0 0 1 1 1v11M2 21h20M8 8h3M8 12h3M8 16h3',
+  chevron: 'M6 9l6 6 6-6',
+  bot: 'M12 4v3M8 4h8M5 9h14a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-8a1 1 0 0 1 1-1zM9 13v1.5M15 13v1.5M2 13v3M22 13v3',
+  mic: 'M12 3a3 3 0 0 1 3 3v6a3 3 0 0 1-6 0V6a3 3 0 0 1 3-3zM5 11a7 7 0 0 0 14 0M12 18v3',
+  edit: 'M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z',
+  history: 'M3 12a9 9 0 1 0 3-6.7L3 8M3 3v5h5M12 7v5l3 2',
+  arrowUp: 'M12 19V5M5 12l7-7 7 7',
+  globe: 'M12 3a9 9 0 1 1 0 18 9 9 0 0 1 0-18zM3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18',
+  moon: 'M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z',
+  monitor: 'M3 4h18v12H3zM8 20h8M12 16v4',
+  menu: 'M4 6h16M4 12h16M4 18h16',
+  close: 'M6 6l12 12M18 6L6 18',
+  palette: 'M12 3a9 9 0 1 0 0 18c1.1 0 1.7-.8 1.7-1.7 0-.5-.2-.8-.5-1.2-.3-.3-.5-.7-.5-1.2 0-.9.7-1.6 1.6-1.6H16a5 5 0 0 0 5-5C21 6.6 17 3 12 3zM7.5 12.5h.01M9.5 8h.01M14.5 8h.01M17 12h.01',
 };
 
 interface IconProps extends Omit<SVGProps<SVGSVGElement>, 'name'> {
@@ -66,7 +92,7 @@ interface IconProps extends Omit<SVGProps<SVGSVGElement>, 'name'> {
 }
 
 /** Inline stroke icon (24×24 viewBox). Decorative by default; wrap in a labelled control. */
-export function Icon({ name, size = 20, strokeWidth = 1.8, ...rest }: IconProps) {
+export function Icon({ name, size = 20, strokeWidth = 1.75, ...rest }: IconProps) {
   return (
     <svg
       aria-hidden="true"

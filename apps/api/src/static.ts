@@ -5,7 +5,7 @@ import { Logger } from '@nestjs/common';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import express, { type Request, type Response, type NextFunction } from 'express';
 import QRCode from 'qrcode';
-import { BRAND, colors, gradients, shadows } from '@demo/shared';
+import { BRAND, colors } from '@demo/shared';
 import { originOf, phoneAppUrl } from './demo/phone-url.js';
 
 /**
@@ -51,26 +51,37 @@ async function startPage(req: Request, hasStaff: boolean, hasApp: boolean): Prom
   return `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>${BRAND.utilityName} EV &amp; Energy demo</title>
-<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script>(function(){var p='dark';try{p=localStorage.getItem('pc-theme')||'dark'}catch(e){}var l=p==='light'||(p==='system'&&window.matchMedia&&matchMedia('(prefers-color-scheme: light)').matches);document.documentElement.dataset.theme=l?'light':'dark'})()</script>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
-*{box-sizing:border-box}body{margin:0;font-family:'Plus Jakarta Sans',system-ui,-apple-system,Segoe UI,sans-serif;background:${colors.bg};color:${colors.text}}
-header{background:linear-gradient(135deg,${colors.navy},${colors.navyMid});color:#fff;padding:32px 0}header .in{max-width:880px;margin:0 auto;padding:0 24px;display:flex;flex-direction:column;gap:8px}
-.logo{height:36px;width:auto;max-width:100%;object-fit:contain;align-self:flex-start;display:block;margin-bottom:6px}.logo-text{font-size:14px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:${colors.headerMuted}}
-h1{margin:6px 0 0;font-size:28px;font-weight:700}header p{margin:0;color:${colors.headerMuted};font-size:15px}
-main{max-width:880px;margin:0 auto;padding:24px;display:flex;flex-direction:column;gap:20px}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
-.card{display:flex;flex-direction:column;gap:6px;padding:22px;border-radius:20px;background:#fff;box-shadow:${shadows.card};text-decoration:none;color:${colors.text};min-height:44px;transition:box-shadow .15s}
-.card strong{font-size:17px}.card span{font-size:14px;color:${colors.textMuted};line-height:1.45}
-.card.pri{background:linear-gradient(135deg,${gradients.primary[0]},${gradients.primary[1]});color:#fff;box-shadow:${shadows.button}}.card.pri span{color:#E6E1FB}
-.card:hover{box-shadow:${shadows.cardHover}}.card.off{opacity:.6}
-.phone{display:flex;flex-wrap:wrap;gap:20px;align-items:center;background:#fff;box-shadow:${shadows.card};border-radius:20px;padding:22px}
-.phone svg{width:180px;height:180px}.phone div{flex:1 1 260px;display:flex;flex-direction:column;gap:6px;font-size:14px;color:${colors.textBody};line-height:1.5}
-code,kbd{background:${colors.divider};padding:2px 6px;border-radius:6px;font-size:13px}kbd{font-family:inherit;font-weight:600}
-ol{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px;font-size:14px;color:${colors.textBody};line-height:1.5}
-footer{max-width:880px;margin:0 auto;padding:0 24px 28px;font-size:12px;color:${colors.textMuted}}
+:root{color-scheme:dark;--font-color:#e2e8f0;--muted-icon:#8aa0c4;--border-color:rgba(255,255,255,0.09);--border-strong:rgba(255,255,255,0.12);--color-blue:#2563eb;--card-bg:rgba(255,255,255,0.045);--card-border:rgba(255,255,255,0.10);--tabs-container:rgba(255,255,255,0.05);--glass-panel-border:rgba(96,165,250,0.22);--link:#60a5fa;--legend-text:rgba(232,237,248,0.7);--strong:#fff;--hover:rgba(255,255,255,0.07);--page-bg-deep:#070f26;--page-bg:radial-gradient(95% 80% at 82% -8%,rgba(37,99,235,0.42) 0%,rgba(37,99,235,0) 58%),linear-gradient(180deg,#0c1c47 0%,#0a1538 48%,#070f26 100%);--shadow:none}
+:root[data-theme=light]{color-scheme:light;--font-color:#1e293b;--muted-icon:#55657e;--border-color:rgba(15,23,42,0.09);--border-strong:rgba(15,23,42,0.15);--card-bg:#fff;--card-border:rgba(15,23,42,0.09);--tabs-container:rgba(15,23,42,0.045);--glass-panel-border:rgba(37,99,235,0.24);--link:#1d4ed8;--legend-text:rgba(30,41,59,0.72);--strong:#0b1b45;--hover:#f6f8fc;--page-bg-deep:#eef2f8;--page-bg:radial-gradient(95% 70% at 82% -8%,rgba(37,99,235,0.10) 0%,rgba(37,99,235,0) 58%),linear-gradient(180deg,#f4f7fc 0%,#eef2f8 100%);--shadow:0 1px 2px rgba(15,23,42,0.05),0 1px 3px rgba(15,23,42,0.04)}
+.logo.on-light{display:none}:root[data-theme=light] .logo.on-dark{display:none}:root[data-theme=light] .logo.on-light{display:block}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;font-family:'Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-size:14px;color:var(--font-color);background:var(--page-bg);background-color:var(--page-bg-deep);background-attachment:fixed}
+a:focus-visible{outline:2px solid #2563eb;outline-offset:2px}
+a{color:var(--link)}
+.top{height:66px;border-bottom:1px solid var(--border-color);display:flex;align-items:center}.top .in{max-width:880px;width:100%;margin:0 auto;padding:0 24px}
+.logo{height:40px;width:auto;max-width:100%;object-fit:contain;display:block}.logo-text{font-size:14px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--muted-icon)}
+main{max-width:880px;margin:0 auto;padding:28px 24px 24px;display:flex;flex-direction:column;gap:20px}
+.head{display:flex;align-items:center;gap:14px}.tile{width:42px;height:42px;border-radius:12px;background:linear-gradient(135deg,#2563eb,#3b82f6);display:inline-flex;align-items:center;justify-content:center;flex-shrink:0}
+h1{margin:0;font-size:24px;font-weight:800;letter-spacing:-0.6px;color:var(--strong)}.head p{margin:2px 0 0;font-size:14px;color:var(--font-color)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px}
+.card{display:flex;flex-direction:column;gap:6px;padding:20px;border-radius:16px;background:var(--card-bg);border:1px solid var(--card-border);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);text-decoration:none;color:var(--font-color);min-height:44px;box-shadow:var(--shadow);transition:background .15s,border-color .15s}
+.card strong{font-size:16px;font-weight:600;color:var(--strong)}.card span{font-size:14px;color:var(--legend-text);line-height:1.45}
+.card:hover{background:var(--hover);border-color:var(--glass-panel-border)}
+.card.pri{background:var(--color-blue);border-color:var(--color-blue)}.card.pri strong{color:#fff}.card.pri span{color:#fff;opacity:.85}.card.pri:hover{background:#3b82f6;border-color:#3b82f6}
+.card.off{opacity:.6}
+.phone{display:flex;flex-wrap:wrap;gap:20px;align-items:center;background:var(--card-bg);border:1px solid var(--card-border);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-radius:16px;padding:20px;box-shadow:var(--shadow)}
+.phone svg{width:180px;height:180px;background:#fff;border-radius:12px;padding:8px;border:1px solid var(--border-strong)}.phone div{flex:1 1 260px;display:flex;flex-direction:column;gap:6px;font-size:14px;line-height:1.5}
+.phone strong{color:var(--strong);font-weight:600}
+code,kbd{background:var(--tabs-container);border:1px solid var(--border-color);padding:1px 6px;border-radius:6px;font-size:13px;color:var(--font-color)}kbd{font-family:inherit;font-weight:600}
+ol{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px;font-size:14px;line-height:1.5}
+footer{max-width:880px;margin:0 auto;padding:0 24px 28px;font-size:12px;color:var(--muted-icon)}
 </style></head><body>
-<header><div class="in">${hasStaff ? `<img class="logo" src="/staff/brand/powerconnect-logo-white.png" alt="${BRAND.vendorName}">` : `<span class="logo-text">${BRAND.vendorName}</span>`}<h1>EV &amp; Energy demo</h1><p>${BRAND.vendorName} concept for ${BRAND.utilityName}. Open the two apps in separate tabs, or the customer app on a phone.</p></div></header>
+<header class="top"><div class="in">${hasStaff ? `<img class="logo on-dark" src="/staff/brand/powerconnect-logo-white.png" alt="${BRAND.vendorName}"><img class="logo on-light" src="/staff/brand/powerconnect-logo-trimmed.png" alt="${BRAND.vendorName}">` : `<span class="logo-text">${BRAND.vendorName}</span>`}</div></header>
 <main>
+<div class="head"><span class="tile" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg></span><div><h1>EV &amp; Energy demo</h1><p>${BRAND.vendorName} concept for ${BRAND.utilityName}. Open the two apps in separate tabs, or the customer app on a phone.</p></div></div>
 <div class="grid">
 ${card('/staff/feeders', 'Staff app', `Feeder visibility, Campaign 360 and DR events for ${BRAND.utilityName} staff.`, true, hasStaff)}
 ${card('/app/login', 'Customer app', 'The mobile app. Sign in as manny@demo.test or priya@demo.test, any password.', false, hasApp)}

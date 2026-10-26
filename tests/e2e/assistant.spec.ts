@@ -5,7 +5,7 @@ import { MANNY } from './helpers';
 const DISCLOSURE = /scripted demo assistant/i;
 const REVEAL = { timeout: 20_000 };
 
-/** Scripted assistant: staff drawer (top-bar search) and the customer sheet. */
+/** Scripted assistant: the staff AI Assistant page and the customer sheet. */
 test.describe('Scripted assistant', () => {
   test.beforeEach(async ({ api }) => {
     await api.reset();
@@ -13,26 +13,26 @@ test.describe('Scripted assistant', () => {
 
   test('staff: ask about a feeder, draft an offer, hand off to Campaign 360', async ({ web }) => {
     await web.goto(`${urls.WEB}/feeders`);
-    const search = web.getByRole('searchbox', { name: /ask/i });
-    await expect(search).toBeVisible(REVEAL);
-    await search.fill('How is SUB-26-F1 doing?');
-    await search.press('Enter');
+    await web.getByRole('link', { name: /ask the .*assistant/i }).click(REVEAL);
+    await expect(web).toHaveURL(/\/assistant$/);
+    const chat = web.getByRole('log', { name: 'Conversation' });
+    await expect(web.getByText(DISCLOSURE).filter({ visible: true }).first()).toBeVisible(REVEAL);
+    const input = web.getByLabel(/ask the assistant/i);
+    await expect(input).toBeFocused();
+    await input.fill('How is SUB-26-F1 doing?');
+    await input.press('Enter');
 
-    const drawer = web.getByRole('dialog', { name: /assistant/i });
-    await expect(drawer).toBeVisible();
-    await expect(drawer.getByText(DISCLOSURE).filter({ visible: true }).first()).toBeVisible();
-    await expect(drawer.getByText(/SUB-26-F1 \(substation SUB-26\) has 17 EVs/).filter({ visible: true }).first()).toBeVisible(REVEAL);
-    await expect(drawer.getByText('15', { exact: true }).filter({ visible: true }).first()).toBeVisible(REVEAL);
+    await expect(chat.getByText(/SUB-26-F1 \(substation SUB-26\) has 17 EVs/).filter({ visible: true }).first()).toBeVisible(REVEAL);
+    await expect(chat.getByText('15', { exact: true }).filter({ visible: true }).first()).toBeVisible(REVEAL);
     await shot(web, 'assistant-staff-feeder');
 
-    await drawer.getByRole('button', { name: /draft an enrollment offer for SUB-26-F1/i }).click();
-    const open = drawer.getByRole('button', { name: /open in campaign 360/i });
+    await chat.getByRole('button', { name: /draft an enrollment offer for SUB-26-F1/i }).click();
+    const open = chat.getByRole('button', { name: /open in campaign 360/i });
     await expect(open).toBeVisible(REVEAL);
-    await expect(drawer.getByText(/variant b/i).filter({ visible: true }).first()).toBeVisible();
+    await expect(chat.getByText(/variant b/i).filter({ visible: true }).first()).toBeVisible();
     await shot(web, 'assistant-staff-draft');
 
     await open.click();
-    await expect(drawer).toBeHidden();
     await expect(web).toHaveURL(/\/campaigns\/new\?/);
     const url = new URL(web.url());
     expect(url.searchParams.get('feeder')).toBe('SUB-26-F1');
@@ -45,15 +45,17 @@ test.describe('Scripted assistant', () => {
     await expect(web.getByRole('button', { name: /^send to [\d,]+ customers$/i })).toBeEnabled({ timeout: 20_000 });
   });
 
-  test('staff: Esc closes the drawer and returns focus to the search box', async ({ web }) => {
-    await web.goto(`${urls.WEB}/feeders`);
-    await web.getByRole('button', { name: 'Open assistant' }).click();
-    const drawer = web.getByRole('dialog', { name: /assistant/i });
-    await expect(drawer).toBeVisible();
-    await expect(drawer.getByRole('button', { name: /where are our biggest blind spots/i })).toBeVisible(REVEAL);
-    await web.keyboard.press('Escape');
-    await expect(drawer).toBeHidden();
-    await expect(web.getByRole('searchbox', { name: /ask/i })).toBeFocused();
+  test('staff: suggestion chip, recent questions and new chat', async ({ web }) => {
+    await web.goto(`${urls.WEB}/assistant`);
+    const chat = web.getByRole('log', { name: 'Conversation' });
+    await web.getByRole('button', { name: /where are our biggest blind spots/i }).click(REVEAL);
+    await expect(chat.getByText(/where are our biggest blind spots/i).filter({ visible: true }).first()).toBeVisible(REVEAL);
+    await web.getByRole('button', { name: 'New chat' }).click();
+    await expect(web.getByRole('button', { name: /where are our biggest blind spots/i })).toBeVisible(REVEAL);
+    await web.getByRole('button', { name: 'Recent questions' }).click();
+    const recent = web.getByRole('region', { name: 'Recent questions' });
+    await recent.getByRole('button', { name: /where are our biggest blind spots/i }).click();
+    await expect(chat.getByText(/where are our biggest blind spots/i).filter({ visible: true }).first()).toBeVisible(REVEAL);
   });
 
   test('customer: why is my bill high, then open the bill', async ({ mob }) => {

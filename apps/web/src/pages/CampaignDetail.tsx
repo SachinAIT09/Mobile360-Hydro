@@ -43,6 +43,7 @@ export function CampaignDetailPage() {
   useSocketEvent('demo:reset', () => void reload());
 
   async function cancel() {
+    if (!window.confirm('Cancel this scheduled campaign? It will not be sent, and this cannot be undone.')) return;
     setBusy(true);
     setActionErr(null);
     try {
@@ -73,7 +74,7 @@ export function CampaignDetailPage() {
   const c = data?.campaign;
   return (
     <main className="page">
-      <PageHeader title={c?.title ?? 'Campaign details'} />
+      <PageHeader title={c?.title ?? 'Campaign details'} icon="campaign" sub="Campaign 360 · results update live as customers act in the app." />
       <div className="page-intro">
         <Link to="/campaigns" className="row center gap6" style={{ fontSize: 14, fontWeight: 600 }}>
           <Icon name="back" size={16} />

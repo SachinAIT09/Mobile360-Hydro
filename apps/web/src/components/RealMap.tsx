@@ -4,7 +4,6 @@ import L, { type LatLngBoundsExpression, type Map as LeafletMap, type Marker as 
 import 'leaflet/dist/leaflet.css';
 import {
   BRAND,
-  colors,
   feederLengthKm,
   feederRoute,
   premisePoints,
@@ -15,6 +14,8 @@ import {
   type SubstationStat,
 } from '@demo/shared';
 import routesFile from '../data/feeder-routes.json';
+import { PALETTE } from '../lib/theme';
+import { useTheme } from '../lib/themeMode';
 import { Icon } from './icons';
 import './addons.css';
 
@@ -38,9 +39,9 @@ const ROUTES = routesFile as unknown as RoutesFile;
 
 const OSM_ATTR = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
 const OSM_URL = (import.meta.env.VITE_MAP_TILE_URL as string | undefined) || 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
-// "Light" is OpenStreetMap tiles muted in CSS (.fm-light), so no API key is needed.
+// "Dark" is OpenStreetMap tiles recoloured in CSS (.fm-light) to match the dark dashboard, so no API key is needed.
 const BASEMAPS = [
-  { name: 'Light', url: OSM_URL, attribution: OSM_ATTR, className: 'fm-light' },
+  { name: 'Dark', url: OSM_URL, attribution: OSM_ATTR, className: 'fm-light' },
   { name: 'Streets', url: OSM_URL, attribution: OSM_ATTR, className: '' },
   {
     name: 'Satellite',
@@ -52,7 +53,7 @@ const BASEMAPS = [
 
 type ColorBy = 'network' | 'forecast' | 'gap';
 const FORECAST_ALERT_PCT = 90;
-const DOT_FILL: Record<PremiseKind, string> = { known: colors.solar, unenrolled: colors.ev, unknown: colors.splitPending };
+const DOT_FILL: Record<PremiseKind, string> = { known: PALETTE.known, unenrolled: PALETTE.unenrolled, unknown: PALETTE.unknown };
 const DOT_LABEL: Record<PremiseKind, string> = { known: 'EV · enrolled in the program', unenrolled: 'EV detected · not enrolled', unknown: 'EV · split not in sample' };
 
 const toLL = (p: LatLng): [number, number] => [p.lat, p.lng];
@@ -63,25 +64,25 @@ function shortCode(code: string, sub: string) {
 }
 
 function forecastColor(pct: number | null): string {
-  if (pct === null) return colors.splitPending;
-  if (pct >= FORECAST_ALERT_PCT) return colors.danger;
-  if (pct >= 70) return colors.solar;
-  return colors.success;
+  if (pct === null) return PALETTE.unknown;
+  if (pct >= FORECAST_ALERT_PCT) return PALETTE.danger;
+  if (pct >= 70) return PALETTE.warn;
+  return PALETTE.ok;
 }
 
-/** Blind-spot share → light lilac to deep indigo. */
+/** Blind-spot share → deep blue (low) to lavender (high), so the worst feeders stand out on the dark map. */
 function gapColor(pct: number | null): string {
-  if (pct === null) return colors.splitPending;
+  if (pct === null) return PALETTE.unknown;
   const t = Math.min(1, Math.max(0, pct / 100));
-  const mix = (a: number, b: number) => Math.round(a + (b - a) * t);
-  // #C9C2F2 → #2A1F66
-  return `rgb(${mix(0xc9, 0x2a)}, ${mix(0xc2, 0x1f)}, ${mix(0xf2, 0x66)})`;
+  const [a, b] = [PALETTE.gapLow, PALETTE.gapHigh];
+  const mix = (i: number) => Math.round(a[i] + (b[i] - a[i]) * t);
+  return `rgb(${mix(0)}, ${mix(1)}, ${mix(2)})`;
 }
 
 function lineColor(f: FeederStat, colorBy: ColorBy): string {
   if (colorBy === 'forecast') return forecastColor(f.forecastLoadPct);
   if (colorBy === 'gap') return gapColor(f.invisiblePct);
-  return colors.navyMid;
+  return PALETTE.route;
 }
 
 function chipHtml(f: FeederStat, label: string, selected: boolean, colorBy: ColorBy): string {
@@ -165,6 +166,10 @@ const SUB_ICON_SVG =
 /** Real basemap with feeders routed along actual streets; positions are illustrative. */
 export default function RealMap({ feeders, selected, onSelect, substationCode, substations, onSelectSubstation, onTilesFailed }: RealMapProps) {
   const [colorBy, setColorBy] = useState<ColorBy>('network');
+  const { theme } = useTheme();
+  // Line casing matches the page surface; the light theme opens on the Streets basemap.
+  const casing = theme === 'light' ? PALETTE.casingLight : PALETTE.casing;
+  const initialBasemap = theme === 'light' ? 'Streets' : 'Dark';
   const [full, setFull] = useState(false);
   const [legendOpen, setLegendOpen] = useState(false);
   const mapRef = useRef<LeafletMap | null>(null);
@@ -242,6 +247,14 @@ export default function RealMap({ feeders, selected, onSelect, substationCode, s
     };
   }, [full]);
 
+  // Redraw when the map's box changes width (e.g. the sidebar opening pushes the page over).
+  const stageRef = useCallback((el: HTMLDivElement | null) => {
+    if (!el) return;
+    const ro = new ResizeObserver(() => mapRef.current?.invalidateSize({ pan: false }));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
   // Keep map gestures from firing when the toolbar is used.
   const stopRef = useCallback((el: HTMLDivElement | null) => {
     if (el) {
@@ -254,7 +267,7 @@ export default function RealMap({ feeders, selected, onSelect, substationCode, s
 
   return (
     <div className={`realmap${full ? ' full' : ''}`} role="group" aria-label={`Map of ${substationCode} feeders. Select a feeder label to see its details.`}>
-      <div className="fm-stage">
+      <div className="fm-stage" ref={stageRef}>
         {/* Fractional zoom steps so the mouse wheel zooms smoothly instead of jumping whole levels. */}
         <MapContainer
           ref={mapRef}
@@ -269,8 +282,8 @@ export default function RealMap({ feeders, selected, onSelect, substationCode, s
           attributionControl
         >
           <LayersControl position="topright">
-            {BASEMAPS.map((b, i) => (
-              <LayersControl.BaseLayer key={b.name} name={b.name} checked={i === 0}>
+            {BASEMAPS.map((b) => (
+              <LayersControl.BaseLayer key={b.name} name={b.name} checked={b.name === initialBasemap}>
                 <TileLayer url={b.url} attribution={b.attribution} className={b.className} maxZoom={19} eventHandlers={tileHandlers} />
               </LayersControl.BaseLayer>
             ))}
@@ -296,7 +309,7 @@ export default function RealMap({ feeders, selected, onSelect, substationCode, s
           {/* EV premises first, so the feeder lines draw over them like streets between houses. */}
           {layout.items.flatMap(({ f, dots }) =>
             dots.map((d, k) => (
-              <CircleMarker key={`dot-${f.code}-${k}`} center={toLL(d)} radius={3.2} pathOptions={{ color: '#FFFFFF', weight: 1, fillColor: DOT_FILL[d.kind], fillOpacity: 1 }}>
+              <CircleMarker key={`dot-${f.code}-${k}`} center={toLL(d)} radius={3.2} pathOptions={{ color: casing, weight: 1, fillColor: DOT_FILL[d.kind], fillOpacity: 1 }}>
                 <Tooltip direction="top" offset={[0, -4]} className="fm-tip">
                   {DOT_LABEL[d.kind]} · {f.code}
                 </Tooltip>
@@ -306,10 +319,10 @@ export default function RealMap({ feeders, selected, onSelect, substationCode, s
 
           {/* Casing under every line, then the coloured core, then a glow under the selected feeder. */}
           {layout.items.map(({ f, route }) => (
-            <Polyline key={`case-${f.code}`} positions={route.map(toLL)} interactive={false} pathOptions={{ color: '#FFFFFF', weight: 6.5, opacity: 0.95, lineCap: 'round', lineJoin: 'round' }} />
+            <Polyline key={`case-${f.code}`} positions={route.map(toLL)} interactive={false} pathOptions={{ color: casing, weight: 6.5, opacity: 0.9, lineCap: 'round', lineJoin: 'round' }} />
           ))}
           {selectedItem && (
-            <Polyline positions={selectedItem.route.map(toLL)} interactive={false} pathOptions={{ color: colors.primary, weight: 16, opacity: 0.18, lineCap: 'round', lineJoin: 'round' }} />
+            <Polyline positions={selectedItem.route.map(toLL)} interactive={false} pathOptions={{ color: PALETTE.selected, weight: 16, opacity: 0.3, lineCap: 'round', lineJoin: 'round' }} />
           )}
           {layout.items.map(({ f, route }) => {
             const on = f.code === selected;
@@ -320,7 +333,7 @@ export default function RealMap({ feeders, selected, onSelect, substationCode, s
                 positions={route.map(toLL)}
                 interactive={false}
                 pathOptions={{
-                  color: on && colorBy === 'network' ? colors.primary : alert ? colors.danger : lineColor(f, colorBy),
+                  color: on && colorBy === 'network' ? PALETTE.selected : alert ? PALETTE.danger : lineColor(f, colorBy),
                   weight: on ? 5 : 3.5,
                   opacity: on ? 1 : 0.88,
                   dashArray: alert ? '10 7' : undefined,
@@ -332,7 +345,7 @@ export default function RealMap({ feeders, selected, onSelect, substationCode, s
           })}
 
           {layout.items.map(({ f, end }) => (
-            <CircleMarker key={`end-${f.code}`} center={toLL(end)} radius={5} interactive={false} pathOptions={{ color: '#FFFFFF', weight: 2, fillColor: f.code === selected ? colors.primary : colors.navyMid, fillOpacity: 1 }} />
+            <CircleMarker key={`end-${f.code}`} center={toLL(end)} radius={5} interactive={false} pathOptions={{ color: casing, weight: 2, fillColor: f.code === selected ? PALETTE.selected : PALETTE.route, fillOpacity: 1 }} />
           ))}
 
           <Marker position={toLL(layout.origin)} icon={subIcon} interactive={false} keyboard={false} zIndexOffset={2000} />
@@ -386,24 +399,24 @@ export default function RealMap({ feeders, selected, onSelect, substationCode, s
             <>
           <strong>{substationCode}</strong>
           <span>
-            <i className="dot" style={{ background: colors.solar }} /> EV enrolled
+            <i className="dot" style={{ background: PALETTE.known }} /> EV enrolled
           </span>
           <span>
-            <i className="dot" style={{ background: colors.ev }} /> EV detected, not enrolled
+            <i className="dot" style={{ background: PALETTE.unenrolled }} /> EV detected, not enrolled
           </span>
           {colorBy === 'network' && (
             <>
               <span>
-                <i className="ln" style={{ background: colors.navyMid }} /> Feeder route
+                <i className="ln" style={{ background: PALETTE.route }} /> Feeder route
               </span>
               <span>
-                <i className="ln dash" style={{ borderColor: colors.danger }} /> Forecast ≥ {FORECAST_ALERT_PCT}%
+                <i className="ln dash" style={{ borderColor: PALETTE.danger }} /> Forecast ≥ {FORECAST_ALERT_PCT}%
               </span>
             </>
           )}
           {colorBy === 'forecast' && (
             <span className="ramp">
-              <i className="ln" style={{ background: colors.success }} /> &lt;70% <i className="ln" style={{ background: colors.solar }} /> 70–89% <i className="ln" style={{ background: colors.danger }} /> ≥90%
+              <i className="ln" style={{ background: PALETTE.ok }} /> &lt;70% <i className="ln" style={{ background: PALETTE.known }} /> 70–89% <i className="ln" style={{ background: PALETTE.danger }} /> ≥90%
             </span>
           )}
           {colorBy === 'gap' && (
@@ -420,7 +433,7 @@ export default function RealMap({ feeders, selected, onSelect, substationCode, s
       </div>
       <p className="small muted">
         Feeder routes follow real streets, but positions are illustrative, placed around {BRAND.demoTown} until {BRAND.utilityName} GIS data is connected. Dots: up to 40 EV premises per
-        feeder. Switch basemap (Light, Streets, Satellite) with the layers button.
+        feeder. Switch basemap (Dark, Streets, Satellite) with the layers button.
       </p>
     </div>
   );
