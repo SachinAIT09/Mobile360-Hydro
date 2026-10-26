@@ -54,8 +54,8 @@ async function startPage(req: Request, hasStaff: boolean, hasApp: boolean): Prom
 <link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box}body{margin:0;font-family:'Plus Jakarta Sans',system-ui,-apple-system,Segoe UI,sans-serif;background:${colors.bg};color:${colors.text}}
-header{background:linear-gradient(135deg,${colors.navy},${colors.navyMid});color:#fff;padding:32px 24px}header .in{max-width:880px;margin:0 auto;display:flex;flex-direction:column;gap:8px}
-.logo{height:40px;width:auto;display:block}.logo-text{font-size:14px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:${colors.headerMuted}}
+header{background:linear-gradient(135deg,${colors.navy},${colors.navyMid});color:#fff;padding:32px 0}header .in{max-width:880px;margin:0 auto;padding:0 24px;display:flex;flex-direction:column;gap:8px}
+.logo{height:36px;width:auto;max-width:100%;object-fit:contain;align-self:flex-start;display:block;margin-bottom:6px}.logo-text{font-size:14px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:${colors.headerMuted}}
 h1{margin:6px 0 0;font-size:28px;font-weight:700}header p{margin:0;color:${colors.headerMuted};font-size:15px}
 main{max-width:880px;margin:0 auto;padding:24px;display:flex;flex-direction:column;gap:20px}
 .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
@@ -65,7 +65,7 @@ main{max-width:880px;margin:0 auto;padding:24px;display:flex;flex-direction:colu
 .card:hover{box-shadow:${shadows.cardHover}}.card.off{opacity:.6}
 .phone{display:flex;flex-wrap:wrap;gap:20px;align-items:center;background:#fff;box-shadow:${shadows.card};border-radius:20px;padding:22px}
 .phone svg{width:180px;height:180px}.phone div{flex:1 1 260px;display:flex;flex-direction:column;gap:6px;font-size:14px;color:${colors.textBody};line-height:1.5}
-code{background:${colors.divider};padding:2px 6px;border-radius:6px;font-size:13px}
+code,kbd{background:${colors.divider};padding:2px 6px;border-radius:6px;font-size:13px}kbd{font-family:inherit;font-weight:600}
 ol{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px;font-size:14px;color:${colors.textBody};line-height:1.5}
 footer{max-width:880px;margin:0 auto;padding:0 24px 28px;font-size:12px;color:${colors.textMuted}}
 </style></head><body>
@@ -79,9 +79,9 @@ ${hasApp ? `<section class="phone">${qr}<div><strong>Open the customer app on a 
 <section class="phone" style="display:block"><strong style="font-size:15px">Demo script</strong>
 <ol style="margin-top:10px">
 <li>Open the <strong>Staff app</strong> in one tab and the <strong>Customer app</strong> (Manny) in another tab or on a phone.</li>
-<li><strong>EV detected:</strong> Staff app → Demo control panel → <em>Simulate EV detected</em> for Manny → pop-up on the phone → enroll. Feeder counts update live.</li>
-<li><strong>Enrollment offer:</strong> Reset → <em>Simulate 284 EVs stopped charging</em> → Feeder visibility → <em>Target 118 with enrollment offer</em> → Send.</li>
-<li><strong>Stop charging:</strong> sign the phone in as Priya → <em>Simulate forecast high</em> → <em>Send stop-charging request</em> → respond on the phone → <em>End event now</em>.</li>
+<li><strong>EV detected:</strong> Staff app → Demo control panel → <em>Send to phone</em> → Manny → <em>New EV detected</em> → pop-up on the phone → enroll. Feeder counts update live.</li>
+<li><strong>Enrollment offer:</strong> press <kbd>Shift</kbd>+<kbd>P</kbd> for the presenter bar → <kbd>R</kbd> reset → <kbd>2</kbd> (284 EVs stopped charging) → Feeder visibility → <em>Target 118 with enrollment offer</em> → Send.</li>
+<li><strong>Stop charging:</strong> sign the phone in as Priya → <em>Send to phone</em> → Priya → <em>Stop-charging request</em> → respond on the phone → <kbd>E</kbd> in the presenter bar ends the event.</li>
 </ol></section>
 </main>
 <footer>${BRAND.conceptLabel} · API docs at <a href="/docs">/docs</a></footer>
